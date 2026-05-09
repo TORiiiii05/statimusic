@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Bonjour {{ user.email }} 👋</h1>
+<p>Ton dashboard arrive bientôt.</p>
+<a href="{{ url_for('auth.logout') }}">Se déconnecter</a>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-container">
+    <h1>Créer un compte</h1>
+    <form method="POST">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Mot de passe" required>
+        <button type="submit">Créer mon compte</button>
+    </form>
+    <p>Déjà un compte ? <a href="{{ url_for('auth.login') }}">Se connecter</a></p>
+</div>
+{% endblock %}  
