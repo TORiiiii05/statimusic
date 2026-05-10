@@ -24,6 +24,7 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 - `df_artists` non stocké → rank artiste toujours `#None`
 - Sons publiés / discographie affichent `—` à la première visite (calcul async Spotify)
 - Liens depuis la home vers les pages détaillées pas encore en place
+- Pages détaillées crashent sur Render plan gratuit (502) → df_json trop lourd pour 512 Mo RAM → à migrer vers Supabase Storage en Session 5
 
 **Appris :**
 - `pd.read_json` interprète les longues strings comme des chemins fichier → toujours passer par `StringIO`
@@ -92,3 +93,4 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 - [ ] Nom de domaine statimusic.fr
 - [ ] Optimisations performances
+- [ ] Migrer df_json vers Supabase Storage (fichier .json.gz) → résoudre crash RAM sur Render plan gratuit (502 Bad Gateway sur /track, /album, /artist)
