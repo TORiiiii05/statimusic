@@ -6,6 +6,26 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
+## Session 2 — Upload + Dashboard ✅
+*Mai 2026*
+
+**Réalisé :**
+- `dashboard/analytics/` : copie et adaptation des modules depuis mon_site_musical (loaders, spotify, home, artist, album, track)
+- Correction des imports (`from analytics.` → `from dashboard.analytics.`)
+- `dashboard/processor.py` : traitement de l'Excel, conversion PIL → base64, assemblage JSON
+- `dashboard/routes.py` : route `/upload` (GET/POST) + route `/home` avec lecture Supabase
+- `templates/dashboard/upload.html` : formulaire d'upload
+- `templates/dashboard/home.html` : affichage KPIs + top artistes + top titres + top albums
+- Colonne `stats_json` (text, nullable) ajoutée à la table `users` dans Supabase
+- Fix Windows : `tmp.close()` avant `f.save()` pour éviter le PermissionError sur fichier temporaire
+
+**Appris :**
+- Les objets PIL ne sont pas JSON-sérialisables → conversion en base64 avant stockage
+- `tempfile.NamedTemporaryFile` sur Windows garde un handle ouvert → il faut fermer avant d'écrire dessus
+- Affichage d'images base64 en HTML : `src="data:image/png;base64,{{ cover }}"`
+
+---
+
 ## Session 1 — Authentification + Base de données ✅
 *Mai 2026*
 
@@ -26,16 +46,7 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 - Flask-Login : UserMixin, login_user, logout_user, login_required, user_loader
 - Flask-Bcrypt : hash et vérification de mot de passe
 - Supabase : création projet, récupération clés API, Table Editor
-- Windows PowerShell : New-Item, echo. pour créer des fichiers
-
----
-
-## Session 2 — Upload + Dashboard ⏳
-*À venir*
-
-- [ ] Page d'upload de l'Excel
-- [ ] Flask reçoit le fichier → calcule les stats → appelle Spotify → stocke JSON en Supabase → supprime l'Excel
-- [ ] Dashboard : 6 KPIs, top artistes avec photos, bar chart années
+- Windows PowerShell : echo. pour créer des fichiers
 
 ---
 

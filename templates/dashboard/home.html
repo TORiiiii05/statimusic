@@ -1,6 +1,93 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Bonjour {{ user.email }} 👋</h1>
-<p>Ton dashboard arrive bientôt.</p>
-<a href="{{ url_for('auth.logout') }}">Se déconnecter</a>
+
+<div class="dashboard">
+
+    <header class="dashboard-header">
+        <h1>Bonjour {{ user.email }} 👋</h1>
+        <a href="{{ url_for('auth.logout') }}">Se déconnecter</a>
+        <a href="{{ url_for('dashboard.upload') }}">Mettre à jour</a>
+    </header>
+
+    <!-- KPIs -->
+    <section class="kpis">
+        <div class="kpi-card">
+            <span class="kpi-value">{{ stats.kpis.total_hours }}</span>
+            <span class="kpi-label">heures écoutées</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ stats.kpis.nb_tracks }}</span>
+            <span class="kpi-label">écoutes</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ stats.kpis.nb_artists }}</span>
+            <span class="kpi-label">artistes</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ "%.0f"|format(stats.kpis.avg_minutes_per_day) }}</span>
+            <span class="kpi-label">min / jour en moyenne</span>
+        </div>
+    </section>
+
+    <!-- Top Artistes -->
+    <section class="top-section">
+        <h2>Top Artistes</h2>
+        <div class="top-artists">
+            {% for artist in stats.top_artists %}
+            <div class="artist-card">
+                {% if artist.cover %}
+                <img src="data:image/png;base64,{{ artist.cover }}" alt="{{ artist.artist_name }}">
+                {% else %}
+                <div class="no-cover">?</div>
+                {% endif %}
+                <span class="rank">#{{ artist.classement }}</span>
+                <span class="name">{{ artist.artist_name }}</span>
+                <span class="time">{{ artist.temps_ecoute }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Top Tracks -->
+    <section class="top-section">
+        <h2>Top Titres</h2>
+        <div class="top-cards">
+            {% for track in stats.top_tracks %}
+            <div class="media-card">
+                {% if track.cover %}
+                <img src="data:image/png;base64,{{ track.cover }}" alt="{{ track.titre }}">
+                {% else %}
+                <div class="no-cover">?</div>
+                {% endif %}
+                <span class="rank">#{{ track.classement }}</span>
+                <span class="name">{{ track.titre }}</span>
+                <span class="sub">{{ track.artiste }}</span>
+                <span class="time">{{ track.temps_ecoute }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Top Albums -->
+    <section class="top-section">
+        <h2>Top Albums</h2>
+        <div class="top-cards">
+            {% for album in stats.top_albums %}
+            <div class="media-card">
+                {% if album.cover %}
+                <img src="data:image/png;base64,{{ album.cover }}" alt="{{ album.album }}">
+                {% else %}
+                <div class="no-cover">?</div>
+                {% endif %}
+                <span class="rank">#{{ album.classement }}</span>
+                <span class="name">{{ album.album }}</span>
+                <span class="sub">{{ album.artiste }}</span>
+                <span class="time">{{ album.temps_ecoute }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
+
 {% endblock %}
