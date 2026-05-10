@@ -85,3 +85,20 @@ def process_excel_and_build_stats(excel_path: str, market: str = "FR") -> dict:
         "top_tracks": _serialize_tracks(top_tracks),
         "top_albums": _serialize_albums(top_albums),
     }
+
+def serialize_df_tracks(df_tracks: pd.DataFrame) -> str:
+    import gzip
+    import base64
+    json_str = df_tracks.to_json(orient="records", date_format="iso", force_ascii=False)
+    compressed = gzip.compress(json_str.encode("utf-8"))
+    return base64.b64encode(compressed).decode("utf-8")
+
+def load_df_from_supabase(df_json_b64: str) -> pd.DataFrame:
+    import gzip, base64 as b64
+    from io import StringIO
+    raw = b64.b64decode(df_json_b64.encode("utf-8"))
+    json_str = gzip.decompress(raw).decode("utf-8")
+    df = pd.read_json(StringIO(json_str), orient="records")
+    if "date_écoute" in df.columns:
+        df["date_écoute"] = pd.to_datetime(df["date_écoute"], errors="coerce")
+    return dfv

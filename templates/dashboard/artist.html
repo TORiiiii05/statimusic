@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="detail-page">
+
+    <a href="{{ url_for('dashboard.home') }}">← Retour</a>
+
+    <div class="detail-header">
+        {% if cover %}
+        <img src="data:image/png;base64,{{ cover }}" alt="{{ kpis.artist_name }}">
+        {% else %}
+        <div class="no-cover">?</div>
+        {% endif %}
+        <div class="detail-meta">
+            <h1>{{ kpis.artist_name }}</h1>
+            <p>{{ kpis.genres_pill }}</p>
+            <p>{{ kpis.followers_pill }}</p>
+        </div>
+    </div>
+
+    <section class="kpis">
+        <div class="kpi-card">
+            <span class="kpi-value">#{{ kpis.rank }}</span>
+            <span class="kpi-label">classement</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.listen_minutes_pill }}</span>
+            <span class="kpi-label">écouté</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.nb_sons_pill }}</span>
+            <span class="kpi-label">sons publiés</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.coverage_pill }}</span>
+            <span class="kpi-label">discographie écoutée</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.discover_date }}</span>
+            <span class="kpi-label">première écoute</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.most_listened_month }}</span>
+            <span class="kpi-label">mois le plus écouté</span>
+        </div>
+    </section>
+
+    <section class="top-section">
+        <h2>Top titres</h2>
+        <div class="top-cards">
+            {% for track in top_tracks %}
+            <div class="media-card">
+                {% if track.cover %}
+                <img src="{{ track.cover }}" alt="{{ track.titre }}">
+                {% else %}
+                <div class="no-cover">?</div>
+                {% endif %}
+                <span class="rank">#{{ track.classement }}</span>
+                <span class="name">{{ track.titre }}</span>
+                <span class="time">{{ track.temps_écoute }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="top-section">
+        <h2>Top albums</h2>
+        <div class="top-cards">
+            {% for album in top_albums %}
+            <div class="media-card">
+                {% if album.cover %}
+                <img src="{{ album.cover }}" alt="{{ album.album }}">
+                {% else %}
+                <div class="no-cover">?</div>
+                {% endif %}
+                <span class="rank">#{{ album.classement }}</span>
+                <span class="name">{{ album.album }}</span>
+                <span class="time">{{ album.temps_écoute }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
+
+{% endblock %}

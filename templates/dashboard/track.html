@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="detail-page">
+
+    <a href="{{ url_for('dashboard.home') }}">← Retour</a>
+
+    <div class="detail-header">
+        {% if kpis.cover %}
+        <img src="data:image/png;base64,{{ kpis.cover }}" alt="{{ kpis.track_name }}">
+        {% else %}
+        <div class="no-cover">?</div>
+        {% endif %}
+        <div class="detail-meta">
+            <h1>{{ kpis.track_name }}</h1>
+            <h2>{{ kpis.artist_name }}</h2>
+            <p>{{ kpis.album_name }}</p>
+        </div>
+    </div>
+
+    <section class="kpis">
+        <div class="kpi-card">
+            <span class="kpi-value">#{{ kpis.rank }}</span>
+            <span class="kpi-label">classement</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.listen_minutes_pill }}</span>
+            <span class="kpi-label">écouté</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.nb_listens_pill }}</span>
+            <span class="kpi-label">fois écouté</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.duration_pill }}</span>
+            <span class="kpi-label">durée</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.discover_date }}</span>
+            <span class="kpi-label">première écoute</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.most_listened_month }}</span>
+            <span class="kpi-label">mois le plus écouté</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-value">{{ kpis.release_date }}</span>
+            <span class="kpi-label">date de sortie</span>
+        </div>
+    </section>
+
+    <section class="chart-section">
+        <h2>Écoutes par mois</h2>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        {{ chart_html | safe }}
+    </section>
+
+</div>
+
+{% endblock %}

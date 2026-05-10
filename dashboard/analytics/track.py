@@ -372,7 +372,7 @@ YEAR_LIGHT_HIGH = globals().get("YEAR_LIGHT_HIGH", 1.25)
 def _ensure_month_start(df: pd.DataFrame, date_col: str) -> pd.Series:
     s = pd.to_datetime(df[date_col], errors="coerce")
     if s.isna().any():
-        raise ValueError(f"{s.isna().sum()} dates invalides dans {date_col}")
+        s = s.dropna()
     return s.dt.to_period("M").dt.to_timestamp()  # début de mois
 
 
@@ -640,6 +640,9 @@ def track_monthly_listening_chart_html(
     # 1) Filtrage strict du titre
     # -------------------------
     df_track = df_tracks[df_tracks["titre"] == track_name].copy()
+    df_track = df_track.dropna(subset=["date_écoute", "temps_écoute"])
+    df_track["date_écoute"] = pd.to_datetime(df_track["date_écoute"], errors="coerce")
+    df_track = df_track.dropna(subset=["date_écoute"])
 
     # Sécurité : si aucune donnée
     if df_track.empty:
