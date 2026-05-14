@@ -101,4 +101,79 @@ def load_df_from_supabase(df_json_b64: str) -> pd.DataFrame:
     df = pd.read_json(StringIO(json_str), orient="records")
     if "date_écoute" in df.columns:
         df["date_écoute"] = pd.to_datetime(df["date_écoute"], errors="coerce")
-    return dfv
+    return df
+
+
+
+def build_search_index(df_tracks: pd.DataFrame) -> dict:
+    """
+    Construit un index de recherche léger depuis df_tracks.
+    Retourne un dict JSON-serializable stockable en session Flask.
+    """
+    index = {"artists": [], "albums": [], "tracks": []}
+
+    if df_tracks is None or df_tracks.empty:
+        return index
+
+    # Artistes — explosion sur virgule
+    if "artiste" in df_tracks.columns and "temps_écoute" in df_tracks.columns:
+        df_exp = df_tracks.copy()
+        df_exp["artiste"] = df_exp["artiste"].astype(str).str.split(",")
+        df_exp = df_exp.explode("artiste")
+        df_exp["artiste"] = df_exp["artiste"].str.strip()
+        df_exp = df_exp[df_exp["artiste"] != ""]
+        df_exp["temps_écoute"] = pd.to_numeric(df_exp["temps_écoute"], errors="coerce").fillna(0)
+        artists = (
+            df_exp.groupby("artiste", as_index=False)["temps_écoute"]
+            .sum()
+            .sort_values("temps_écoute", ascending=False)
+            .reset_index(drop=True)
+        )
+        index["artists"] = [
+            {"name": row["artiste"], "search_key": row["artiste"].lower()}
+            for _, row in artists.iterrows()
+        ]
+
+    # Albums
+    if {"album", "artiste", "temps_écoute"}.issubset(df_tracks.columns):
+        df_al = df_tracks.copy()
+        df_al["temps_écoute"] = pd.to_numeric(df_al["temps_écoute"], errors="coerce").fillna(0)
+        albums = (
+            df_al.groupby(["album", "artiste"], as_index=False)["temps_écoute"]
+            .sum()
+            .sort_values("temps_écoute", ascending=False)
+            .reset_index(drop=True)
+        )
+        index["albums"] = [
+            {
+                "album": row["album"],
+                "artist": row["artiste"],
+                "search_key": row["album"].lower(),
+            }
+            for _, row in albums.iterrows()
+            if row["album"].strip()
+        ]
+
+    # Tracks
+    if {"titre", "artiste", "ISRC", "temps_écoute"}.issubset(df_tracks.columns):
+        df_tr = df_tracks.copy()
+        df_tr["temps_écoute"] = pd.to_numeric(df_tr["temps_écoute"], errors="coerce").fillna(0)
+        df_tr["ISRC"] = df_tr["ISRC"].astype(str).str.strip()
+        tracks = (
+            df_tr[df_tr["ISRC"] != ""]
+            .groupby(["titre", "artiste", "ISRC"], as_index=False)["temps_écoute"]
+            .sum()
+            .sort_values("temps_écoute", ascending=False)
+            .reset_index(drop=True)
+        )
+        index["tracks"] = [
+            {
+                "titre": row["titre"],
+                "artist": row["artiste"],
+                "isrc": row["ISRC"],
+                "search_key": row["titre"].lower(),
+            }
+            for _, row in tracks.iterrows()
+        ]
+
+    return index

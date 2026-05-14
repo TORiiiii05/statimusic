@@ -57,7 +57,7 @@ def get_home_kpis(df_tracks: pd.DataFrame) -> dict:
 def get_top_artists_by_listen_time_circle(
     df_tracks: pd.DataFrame,
     top_n: int = 10,
-    img_size: int = 96,
+    img_size: int = 400,
     market: str = "FR",
 ) -> pd.DataFrame:
     """
@@ -92,15 +92,21 @@ def get_top_artists_by_listen_time_circle(
     top["classement"] = top.index + 1
     top["temps_écoute"] = (top["temps_écoute"] / 3600).apply(hours_to_hm)
 
-    # ⚠️ artist_id pas encore résolu ici (sera fait plus tard via ISRC/Spotify)
-    top["artist_id"] = ""
+    from dashboard.analytics.spotify import get_spotify_token, search_artist
+    tok = get_spotify_token()
+    def _resolve_artist_id(name):
+        if not tok:
+            return ""
+        a = search_artist(name, token=tok, market=market)
+        return (a or {}).get("id", "")
+    top["artist_id"] = top["artiste"].apply(_resolve_artist_id)
 
     covers: list[Image.Image | None] = []
     for artist in top["artiste"].tolist():
         pil = cover_getter(
             artist_name=artist,
             market=market,
-            shape="circle",
+            shape="square",
         )
         if pil:
             try:
@@ -122,7 +128,7 @@ def get_top_artists_by_listen_time_circle(
 def get_top_tracks_by_listen_time(
     df_tracks: pd.DataFrame,
     top_n: int = 3,
-    img_size: int = 220,
+    img_size: int = 400,
     market: str = "FR",
 ) -> pd.DataFrame:
     """
@@ -182,7 +188,7 @@ def get_top_tracks_by_listen_time(
 def get_top_albums_by_listen_time(
     df_tracks: pd.DataFrame,
     top_n: int = 3,
-    img_size: int = 220,
+    img_size: int = 400,
     market: str = "FR",
 ) -> pd.DataFrame:
     """
@@ -219,8 +225,14 @@ def get_top_albums_by_listen_time(
     top["classement"] = top.index + 1
     top["temps_écoute"] = (top["temps_écoute"] / 3600).apply(hours_to_hm)
 
-    # album_id sera résolu plus tard (via Spotify / ISRC)
-    top["album_id"] = ""
+    from dashboard.analytics.spotify import get_spotify_token, search_album
+    tok = get_spotify_token()
+    def _resolve_album_id(row):
+        if not tok:
+            return ""
+        al = search_album(row["album"], row["artiste"], token=tok, market=market)
+        return (al or {}).get("id", "")
+    top["album_id"] = top.apply(_resolve_album_id, axis=1)
 
     top = covers_getter(
         top,

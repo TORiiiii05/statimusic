@@ -1004,8 +1004,10 @@ def get_top_10_titles_by_listen_time(
     if not tok:
         return pd.DataFrame(columns=["classement", "cover", "titre", "isrc", "temps_écoute"])
 
+    import re
+    pattern = r'(?i)(^|,\s*)' + re.escape(artist_name.strip()) + r'(\s*,|$)'
     df_artist = df_tracks[
-        df_tracks["artiste"].astype(str).str.contains(artist_name, na=False)
+        df_tracks["artiste"].astype(str).str.contains(pattern, regex=True, na=False)
         & (pd.to_numeric(df_tracks["temps_écoute"], errors="coerce").fillna(0) > 0)
     ].copy()
 
@@ -1050,7 +1052,19 @@ def get_top_10_titles_by_listen_time(
         covers = list(ex.map(_cover_for_title, titles))
 
     top["cover"] = covers
-    out = top[["classement", "cover", "titre", "isrc", "temps_écoute"]]
+    # Ajouter l'album dominant par titre
+    if "album" in df_artist.columns:
+        best_album = (
+            df_artist.groupby(["titre", "album"], as_index=False)["temps_écoute"]
+            .sum()
+        )
+        idx = best_album.groupby("titre")["temps_écoute"].idxmax()
+        best_album = best_album.loc[idx, ["titre", "album"]]
+        top = top.merge(best_album, on="titre", how="left")
+    else:
+        top["album"] = ""
+
+    out = top[["classement", "cover", "titre", "album", "isrc", "temps_écoute"]]
 
     _cache_top_titles[cache_key] = out.copy()
     return out
@@ -1082,8 +1096,10 @@ def get_top_10_albums_by_listen_time(
     if not tok:
         return pd.DataFrame(columns=cols)
 
+    import re
+    pattern = r'(?i)(^|,\s*)' + re.escape(artist_name.strip()) + r'(\s*,|$)'
     df_artist = df_tracks[
-        df_tracks["artiste"].astype(str).str.contains(artist_name, na=False)
+        df_tracks["artiste"].astype(str).str.contains(pattern, regex=True, na=False)
         & (pd.to_numeric(df_tracks["temps_écoute"], errors="coerce").fillna(0) > 0)
     ].copy()
 

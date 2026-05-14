@@ -6,6 +6,9 @@ import tempfile
 import gzip
 import base64 as b64
 from io import StringIO
+from flask import jsonify
+from flask import session
+from dashboard.processor import build_search_index
 
 import pandas as pd
 
@@ -44,13 +47,24 @@ def _load_df_from_supabase(df_json_b64: str) -> pd.DataFrame:
 @dashboard_bp.route("/home")
 @login_required
 def home():
-    res = supabase.table("users").select("stats_json").eq("id", current_user.id).execute()
+    res = supabase.table("users").select("stats_json, df_json").eq("id", current_user.id).execute()
     stats = None
     if res.data and res.data[0].get("stats_json"):
         stats = json.loads(res.data[0]["stats_json"])
 
     if not stats:
         return redirect(url_for("dashboard.upload"))
+
+    # Stockage de l'index en Supabase si pas encore fait
+    if not res.data[0].get("search_index_json") and res.data[0].get("df_json"):
+        try:
+            df = _load_df_from_supabase(res.data[0]["df_json"])
+            index = build_search_index(df)
+            supabase.table("users").update({
+                "search_index_json": json.dumps(index, ensure_ascii=False)
+            }).eq("id", current_user.id).execute()
+        except Exception:
+            pass
 
     return render_template("dashboard/home.html", user=current_user, stats=stats)
 
@@ -87,8 +101,18 @@ def upload():
                 "df_json": df_json,
             }).eq("id", current_user.id).execute()
 
+            # Reconstruction de l'index de recherche
+            try:
+                index = build_search_index(loaded.df_tracks)
+                supabase.table("users").update({
+                    "search_index_json": json.dumps(index, ensure_ascii=False)
+                }).eq("id", current_user.id).execute()
+            except Exception:
+                pass
+            
             flash("Ton historique a bien été importé !", "success")
             return redirect(url_for("dashboard.home"))
+        
 
         except Exception as e:
             return render_template("dashboard/upload.html", error=f"Erreur lors du traitement : {e}")
@@ -193,7 +217,7 @@ def artist(artist_id):
     except Exception as e:
         return render_template("dashboard/upload.html", error=f"Erreur chargement données : {e}")
 
-    kpis = get_artist_kpis_by_id(df_tracks, pd.DataFrame(), artist_id, market=MARKET)
+    kpis = get_artist_kpis_by_id(df_tracks, df_tracks, artist_id, market=MARKET)
 
     # Cover
     tok = get_spotify_token()
@@ -217,3 +241,95 @@ def artist(artist_id):
         top_tracks=top_tracks_list,
         top_albums=top_albums_list,
     )
+
+@dashboard_bp.route("/api/search")
+@login_required
+def search():
+    q = request.args.get("q", "").strip().lower()
+    if len(q) < 2:
+        return jsonify([])
+
+    res = supabase.table("users").select("search_index_json").eq("id", current_user.id).execute()
+    if not res.data or not res.data[0].get("search_index_json"):
+        return jsonify([])
+    try:
+        index = json.loads(res.data[0]["search_index_json"])
+    except Exception:
+        return jsonify([])
+
+    results = []
+
+    # Artistes
+    count = 0
+    for item in index["artists"]:
+        if count >= 4:
+            break
+        if q in item["search_key"]:
+            results.append({
+                "type": "artist",
+                "label": item["name"],
+                "name": item["name"],
+                "url": url_for("dashboard.resolve_artist", name=item["name"]),
+            })
+            count += 1
+
+    # Albums
+    count = 0
+    for item in index["albums"]:
+        if count >= 3:
+            break
+        if q in item["search_key"]:
+            results.append({
+                "type": "album",
+                "label": f"{item['album']} — {item['artist']}",
+                "album": item["album"],
+                "artist": item["artist"],
+                "url": url_for("dashboard.resolve_album", album=item["album"], artist=item["artist"]),
+            })
+            count += 1
+
+    # Tracks
+    count = 0
+    for item in index["tracks"]:
+        if count >= 3:
+            break
+        if q in item["search_key"]:
+            results.append({
+                "type": "track",
+                "label": f"{item['titre']} — {item['artist']}",
+                "url": url_for("dashboard.track", isrc=item["isrc"]),
+                "isrc": item["isrc"],
+            })
+            count += 1
+
+    return jsonify(results)
+
+@dashboard_bp.route("/search/resolve/artist")
+@login_required
+def resolve_artist():
+    from dashboard.analytics.spotify import get_spotify_token, search_artist
+    name = request.args.get("name", "").strip()
+    if not name:
+        return redirect(url_for("dashboard.home"))
+    tok = get_spotify_token()
+    a = search_artist(name, token=tok, market=MARKET) if tok else None
+    artist_id = (a or {}).get("id", "")
+    if artist_id:
+        return redirect(url_for("dashboard.artist", artist_id=artist_id))
+    return redirect(url_for("dashboard.home"))
+
+
+@dashboard_bp.route("/search/resolve/album")
+@login_required
+def resolve_album():
+    from dashboard.analytics.spotify import get_spotify_token, search_album
+    album = request.args.get("album", "").strip()
+    artist = request.args.get("artist", "").strip()
+    if not album:
+        return redirect(url_for("dashboard.home"))
+    tok = get_spotify_token()
+    al = search_album(album, artist, token=tok, market=MARKET) if tok else None
+    album_id = (al or {}).get("id", "")
+    if album_id:
+        return redirect(url_for("dashboard.album", album_id=album_id))
+    return redirect(url_for("dashboard.home"))

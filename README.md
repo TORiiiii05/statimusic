@@ -12,10 +12,9 @@ Tu as déjà téléchargé tes données personnelles Deezer ? statimusic les tra
 
 **Ce que tu pourras voir :**
 - Tes indicateurs clés : heures totales, nombre d'écoutes, artistes découverts
-- Ton top artistes avec leurs photos
-- Ton top titres et albums
-- L'évolution de ton écoute mois par mois et année par année
-- Des pages détaillées par artiste, album et titre
+- Ton top artistes, titres et albums avec leurs photos (podium 2-1-3)
+- Des pages détaillées par artiste, album et titre avec graphiques
+- Une barre de recherche avec suggestions en temps réel
 
 ---
 
@@ -25,6 +24,7 @@ Tu as déjà téléchargé tes données personnelles Deezer ? statimusic les tra
 - **Base de données** : Supabase (PostgreSQL)
 - **Hébergement** : Render
 - **API** : Spotify (photos artistes et covers)
+- **Design** : CSS custom, Inter font, dark mode
 
 ---
 
@@ -42,6 +42,7 @@ pip install -r requirements.txt
 ```
 
 Crée un fichier `.env` à la racine :
+
 ```
 SECRET_KEY=ta_clé_secrète
 SUPABASE_URL=ton_url_supabase
@@ -60,11 +61,23 @@ python app.py
 
 ---
 
+## Développement
+
+Pour tester avec un jeu de données réduit (10k écoutes les plus récentes) :
+
+```bash
+python make_dev_excel.py
+```
+
+Puis uploade `deezer_data_10k.xlsx` depuis la page `/upload`.
+
+---
+
 ## Roadmap
 
 - [x] Session 0 — Mini projet de référence (musicstats)
 - [x] Session 1 — Authentification + Base de données
-- [ ] Session 2 — Upload Excel + Dashboard
-- [ ] Session 3 — Pages détaillées artiste / album / titre
-- [ ] Session 4 — Recherche + Design
-- [ ] Session 5 — Production
+- [x] Session 2 — Upload Excel + Dashboard
+- [x] Session 3 — Pages détaillées artiste / album / titre
+- [x] Session 4 — Recherche + Design
+- [ ] Session 5 — Production (Supabase Storage, domaine, perf)

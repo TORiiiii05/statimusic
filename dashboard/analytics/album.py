@@ -400,9 +400,19 @@ def album_monthly_listening_chart_html(
         date_col=date_col,
         duration_col=duration_col,
         duration_unit=duration_unit,
-        title=f"Répartition du temps d'écoute par mois – {album_name}",
+        title="",
         height=height,
     )
+
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#888888"),
+        margin=dict(l=40, r=20, t=10, b=40),
+        xaxis=dict(gridcolor="#2a2a2a", linecolor="#2a2a2a"),
+        yaxis=dict(gridcolor="#2a2a2a", linecolor="#2a2a2a"),
+    )
+    fig.update_traces(marker_color="#F2CC0D")
 
     return fig.to_html(
         full_html=False,
@@ -626,7 +636,7 @@ def album_monthly_listening_chart_html_by_id(
     date_col: str = "date_écoute",
     duration_col: str = "temps_écoute",
     duration_unit: str = "seconds",
-    height: int = 460,
+    height: int = 400,
     market: str = "FR",
 ) -> str:
     """
@@ -634,6 +644,8 @@ def album_monthly_listening_chart_html_by_id(
     - resolve album_name+artist_name via Spotify album_id
     - utilise ta fonction name-based existante
     """
+    import uuid
+
     tok = get_spotify_token()
     al = get_album_by_id(album_id, token=tok, market=market) if tok else None
     raw = (al or {}).get("raw") or {}
@@ -642,7 +654,7 @@ def album_monthly_listening_chart_html_by_id(
     artists = raw.get("artists") or []
     artist_name = (artists[0].get("name") if artists else "") or ""
 
-    return album_monthly_listening_chart_html(
+    html = album_monthly_listening_chart_html(
         df_tracks,
         album_name=album_name,
         artist_name=artist_name,
@@ -652,6 +664,8 @@ def album_monthly_listening_chart_html_by_id(
         height=height,
         market=market,
     )
+
+    return html
 
 
 def format_album_reco_for_web_by_id(

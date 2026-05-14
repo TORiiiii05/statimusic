@@ -3,14 +3,8 @@
 
 <div class="dashboard">
 
-    <header class="dashboard-header">
-        <h1>Bonjour {{ user.email }} 👋</h1>
-        <a href="{{ url_for('auth.logout') }}">Se déconnecter</a>
-        <a href="{{ url_for('dashboard.upload') }}">Mettre à jour</a>
-    </header>
-
     <!-- KPIs -->
-    <section class="kpis">
+    <section class="kpis-section">
         <div class="kpi-card">
             <span class="kpi-value">{{ stats.kpis.total_hours }}</span>
             <span class="kpi-label">heures écoutées</span>
@@ -25,65 +19,93 @@
         </div>
         <div class="kpi-card">
             <span class="kpi-value">{{ "%.0f"|format(stats.kpis.avg_minutes_per_day) }}</span>
-            <span class="kpi-label">min / jour en moyenne</span>
+            <span class="kpi-label">min / jour</span>
         </div>
     </section>
 
     <!-- Top Artistes -->
     <section class="top-section">
-        <h2>Top Artistes</h2>
-        <div class="top-artists">
-            {% for artist in stats.top_artists %}
-            <div class="artist-card">
-                {% if artist.cover %}
-                <img src="data:image/png;base64,{{ artist.cover }}" alt="{{ artist.artist_name }}">
-                {% else %}
-                <div class="no-cover">?</div>
-                {% endif %}
-                <span class="rank">#{{ artist.classement }}</span>
-                <span class="name">{{ artist.artist_name }}</span>
-                <span class="time">{{ artist.temps_ecoute }}</span>
-            </div>
+        <h2 class="section-title">Top Artistes</h2>
+        <div class="podium-grid">
+            {% if stats.top_artists|length >= 3 %}
+                {% set ordered = [stats.top_artists[1], stats.top_artists[0], stats.top_artists[2]] %}
+                {% set sizes = [200, 250, 200] %}
+            {% else %}
+                {% set ordered = stats.top_artists %}
+                {% set sizes = [200, 200, 200] %}
+            {% endif %}
+            {% for artist in ordered %}
+            {% set idx = loop.index0 %}
+            <a href="{{ url_for('dashboard.artist', artist_id=artist.artist_id) if artist.artist_id else '#' }}" class="podium-card">
+                <div class="podium-img-wrap" style="width:{{ sizes[idx] }}px; height:{{ sizes[idx] }}px;">
+                    {% if artist.cover %}
+                    <img src="data:image/png;base64,{{ artist.cover }}" alt="{{ artist.artist_name }}" class="podium-img circle">
+                    {% else %}
+                    <div class="no-cover circle">?</div>
+                    {% endif %}
+                </div>
+                <span class="podium-name">{{ artist.artist_name }}</span>
+                <span class="podium-time">{{ artist.temps_ecoute }}</span>
+                <span class="podium-rank {% if artist.classement == 1 %}rank-gold{% endif %}">#{{ artist.classement }}</span>
+            </a>
             {% endfor %}
         </div>
     </section>
 
-    <!-- Top Tracks -->
+    <!-- Top Titres -->
     <section class="top-section">
-        <h2>Top Titres</h2>
-        <div class="top-cards">
-            {% for track in stats.top_tracks %}
-            <div class="media-card">
-                {% if track.cover %}
-                <img src="data:image/png;base64,{{ track.cover }}" alt="{{ track.titre }}">
-                {% else %}
-                <div class="no-cover">?</div>
-                {% endif %}
-                <span class="rank">#{{ track.classement }}</span>
-                <span class="name">{{ track.titre }}</span>
-                <span class="sub">{{ track.artiste }}</span>
-                <span class="time">{{ track.temps_ecoute }}</span>
-            </div>
+        <h2 class="section-title">Top Titres</h2>
+        <div class="podium-grid">
+            {% if stats.top_tracks|length >= 3 %}
+                {% set ordered_tracks = [stats.top_tracks[1], stats.top_tracks[0], stats.top_tracks[2]] %}
+                {% set sizes = [200, 250, 200] %}
+            {% else %}
+                {% set ordered_tracks = stats.top_tracks %}
+                {% set sizes = [200, 200, 200] %}
+            {% endif %}
+            {% for track in ordered_tracks %}
+            {% set idx = loop.index0 %}
+            <a href="{{ url_for('dashboard.track', isrc=track.isrc) if track.isrc else '#' }}" class="podium-card">
+                <div class="podium-img-wrap" style="width:{{ sizes[idx] }}px; height:{{ sizes[idx] }}px;">
+                    {% if track.cover %}
+                    <img src="data:image/png;base64,{{ track.cover }}" alt="{{ track.titre }}" class="podium-img rounded">
+                    {% else %}
+                    <div class="no-cover rounded">?</div>
+                    {% endif %}
+                </div>
+                <span class="podium-name">{{ track.titre }}</span>
+                <span class="podium-time">{{ track.artiste }} · {{ track.temps_ecoute }}</span>
+                <span class="podium-rank {% if track.classement == 1 %}rank-gold{% endif %}">#{{ track.classement }}</span>
+            </a>
             {% endfor %}
         </div>
     </section>
 
     <!-- Top Albums -->
     <section class="top-section">
-        <h2>Top Albums</h2>
-        <div class="top-cards">
-            {% for album in stats.top_albums %}
-            <div class="media-card">
-                {% if album.cover %}
-                <img src="data:image/png;base64,{{ album.cover }}" alt="{{ album.album }}">
-                {% else %}
-                <div class="no-cover">?</div>
-                {% endif %}
-                <span class="rank">#{{ album.classement }}</span>
-                <span class="name">{{ album.album }}</span>
-                <span class="sub">{{ album.artiste }}</span>
-                <span class="time">{{ album.temps_ecoute }}</span>
-            </div>
+        <h2 class="section-title">Top Albums</h2>
+        <div class="podium-grid">
+            {% if stats.top_albums|length >= 3 %}
+                {% set ordered_albums = [stats.top_albums[1], stats.top_albums[0], stats.top_albums[2]] %}
+                {% set sizes = [200, 250, 200] %}
+            {% else %}
+                {% set ordered_albums = stats.top_albums %}
+                {% set sizes = [200, 200, 200] %}
+            {% endif %}
+            {% for album in ordered_albums %}
+            {% set idx = loop.index0 %}
+            <a href="{{ url_for('dashboard.album', album_id=album.album_id) if album.album_id else '#' }}" class="podium-card">
+                <div class="podium-img-wrap" style="width:{{ sizes[idx] }}px; height:{{ sizes[idx] }}px;">
+                    {% if album.cover %}
+                    <img src="data:image/png;base64,{{ album.cover }}" alt="{{ album.album }}" class="podium-img rounded">
+                    {% else %}
+                    <div class="no-cover rounded">?</div>
+                    {% endif %}
+                </div>
+                <span class="podium-name">{{ album.album }}</span>
+                <span class="podium-time">{{ album.artiste }} · {{ album.temps_ecoute }}</span>
+                <span class="podium-rank {% if album.classement == 1 %}rank-gold{% endif %}">#{{ album.classement }}</span>
+            </a>
             {% endfor %}
         </div>
     </section>

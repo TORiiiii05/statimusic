@@ -4,9 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>statimusic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+
+    {% if current_user.is_authenticated %}
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard.home') }}" class="nav-logo">
+            <img src="{{ url_for('static', filename='logo_blanc.png') }}" alt="statimusic" height="32">
+        </a>
+
+        <div class="search-wrapper">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="search-input" placeholder="Artiste, album, titre..." autocomplete="off">
+            <div id="search-dropdown" class="search-dropdown hidden"></div>
+        </div>
+
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard.upload') }}" class="nav-link">Mettre à jour</a>
+            <a href="#" class="nav-link">Mon compte</a>
+        </div>
+    </nav>
+    {% endif %}
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -15,6 +40,68 @@
         {% endif %}
     {% endwith %}
 
-    {% block content %}{% endblock %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if current_user.is_authenticated %}
+    <footer class="site-footer">
+        <img src="{{ url_for('static', filename='logo_blanc.png') }}" alt="statimusic" height="24">
+        <span>Statismusic © 2025. All rights reserved.</span>
+    </footer>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+    <script>
+    const input = document.getElementById('search-input');
+    const dropdown = document.getElementById('search-dropdown');
+    let debounceTimer;
+    let currentResults = [];
+
+    input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        const q = input.value.trim();
+        if (q.length < 2) { dropdown.classList.add('hidden'); dropdown.innerHTML = ''; currentResults = []; return; }
+        debounceTimer = setTimeout(() => fetchSuggestions(q), 250);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && currentResults.length > 0) {
+            e.preventDefault();
+            window.location.href = currentResults[0].url;
+        }
+    });
+
+    async function fetchSuggestions(q) {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        currentResults = data;
+        if (!data.length) { dropdown.classList.add('hidden'); return; }
+
+        const groups = { artist: [], album: [], track: [] };
+        data.forEach(item => groups[item.type]?.push(item));
+
+        let html = '';
+        const labels = { artist: 'Artistes', album: 'Albums', track: 'Titres' };
+        ['artist', 'album', 'track'].forEach(type => {
+            if (!groups[type].length) return;
+            html += `<div class="dropdown-group">${labels[type]}</div>`;
+            groups[type].forEach(item => {
+                html += `<a class="dropdown-item" href="${item.url}">${item.label}</a>`;
+            });
+        });
+
+        dropdown.innerHTML = html;
+        dropdown.classList.remove('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-wrapper')) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    </script>
+    {% endif %}
+
 </body>
 </html>

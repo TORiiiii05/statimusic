@@ -3,77 +3,85 @@
 
 <div class="detail-page">
 
-    <a href="{{ url_for('dashboard.home') }}">← Retour</a>
+    <a href="{{ url_for('dashboard.home') }}" class="back-btn">← Retour</a>
 
     <div class="detail-header">
-        {% if kpis.cover %}
-        <img src="data:image/png;base64,{{ kpis.cover }}" alt="{{ kpis.album_name }}">
-        {% else %}
-        <div class="no-cover">?</div>
-        {% endif %}
-        <div class="detail-meta">
-            <h1>{{ kpis.album_name }}</h1>
-            <h2>{{ kpis.artist_name }}</h2>
+        <div class="detail-cover-wrap">
+            {% if kpis.cover %}
+            <img src="data:image/png;base64,{{ kpis.cover }}" alt="{{ kpis.album_name }}" class="detail-cover rounded">
+            {% else %}
+            <div class="no-cover rounded large">?</div>
+            {% endif %}
+            <h1 class="detail-name">{{ kpis.album_name }}</h1>
+            <a href="{{ url_for('dashboard.resolve_artist', name=kpis.artist_name) }}" class="detail-sub">{{ kpis.artist_name }}</a>
+        </div>
+
+        <div class="detail-right">
+            <span class="detail-rank {% if kpis.rank == 1 %}rank-gold{% endif %}">#{{ kpis.rank }}</span>
+
+            <div class="detail-pills">
+                <div class="pill">{{ kpis.album_duration_pill }}</div>
+                <div class="pill">{{ kpis.release_date }}</div>
+            </div>
+
+            <div class="detail-kpis-grid">
+                <div class="detail-kpi">
+                    <span class="detail-kpi-label">Découverte</span>
+                    <span class="detail-kpi-value">{{ kpis.discover_date }}</span>
+                </div>
+                <div class="detail-kpi">
+                    <span class="detail-kpi-label">Temps d'écoute</span>
+                    <span class="detail-kpi-value">{{ kpis.listen_minutes_pill }}</span>
+                </div>
+                <div class="detail-kpi">
+                    <span class="detail-kpi-label">Mois le plus écouté</span>
+                    <span class="detail-kpi-value">{{ kpis.most_listened_month }}</span>
+                </div>
+                <div class="detail-kpi">
+                    <span class="detail-kpi-label">Nombre d'écoutes</span>
+                    <span class="detail-kpi-value">{{ kpis.nb_listens_pill }}</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <section class="kpis">
-        <div class="kpi-card">
-            <span class="kpi-value">#{{ kpis.rank }}</span>
-            <span class="kpi-label">classement</span>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-value">{{ kpis.listen_minutes_pill }}</span>
-            <span class="kpi-label">écouté</span>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-value">{{ kpis.nb_listens_pill }}</span>
-            <span class="kpi-label">écoutes</span>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-value">{{ kpis.album_duration_pill }}</span>
-            <span class="kpi-label">durée album</span>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-value">{{ kpis.nb_tracks_pill }}</span>
-            <span class="kpi-label">titres</span>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-value">{{ kpis.discover_date }}</span>
-            <span class="kpi-label">première écoute</span>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-value">{{ kpis.most_listened_month }}</span>
-            <span class="kpi-label">mois le plus écouté</span>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-value">{{ kpis.release_date }}</span>
-            <span class="kpi-label">date de sortie</span>
-        </div>
-    </section>
-
+    {% if top_tracks %}
     <section class="top-section">
-        <h2>Top titres</h2>
-        <div class="top-cards">
-            {% for track in top_tracks %}
-            <div class="media-card">
-                {% if track.cover %}
-                <img src="{{ track.cover }}" alt="{{ track.titre }}">
-                {% else %}
-                <div class="no-cover">?</div>
-                {% endif %}
-                <span class="rank">#{{ track.classement }}</span>
-                <span class="name">{{ track.titre }}</span>
-                <span class="time">{{ track.temps_écoute }}</span>
-            </div>
-            {% endfor %}
+        <h2 class="section-title">Classement titres</h2>
+        <div class="track-table-wrap">
+            <table class="track-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Titre</th>
+                        <th>Temps d'écoute</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for track in top_tracks %}
+                    <tr class="track-row" {% if track.isrc %}onclick="window.location='/track/{{ track.isrc }}'"{% endif %}>
+                        <td class="track-rank">{{ track.classement }}</td>
+                        <td class="track-title">
+                            {% if track.cover %}
+                            <img src="{{ track.cover }}" alt="{{ track.titre }}" class="track-thumb">
+                            {% endif %}
+                            <span>{{ track.titre }}</span>
+                        </td>
+                        <td class="track-time">{{ track['temps_écoute'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </section>
+    {% endif %}
 
     <section class="chart-section">
-        <h2>Écoutes par mois</h2>
-        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-        {{ chart_html | safe }}
+        <h2 class="section-title">Répartition du temps d'écoute</h2>
+        <div class="chart-wrap">
+            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+            {{ chart_html | safe }}
+        </div>
     </section>
 
 </div>

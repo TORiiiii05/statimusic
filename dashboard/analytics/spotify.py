@@ -318,7 +318,29 @@ def search_album(album_name: str, artist_name: str, token: Optional[str] = None,
     if not items:
         return None
 
-    al = items[0]
+    # Cherche le meilleur match par nom
+    best = None
+    best_score = -1
+    for al in items:
+        name = _norm(al.get("name") or "")
+        album_norm = _norm(album_name)
+        score = 0
+        if name == album_norm:
+            score += 100
+        elif album_norm in name or name in album_norm:
+            score += 40
+        # Bonus si l'artiste correspond
+        artists = [_norm(a.get("name", "")) for a in (al.get("artists") or [])]
+        if any(_norm(artist_name) in a or a in _norm(artist_name) for a in artists):
+            score += 20
+        if score > best_score:
+            best_score = score
+            best = al
+
+    if not best:
+        return None
+
+    al = best
     images = al.get("images") or []
     obj = {
         "id": al.get("id"),

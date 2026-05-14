@@ -620,35 +620,27 @@ def plot_listening_time_by_month_interactive(
     return fig, out, {"k": k, "n_months": n_months, "n_bars": int(len(out))}
 
 
-
 def track_monthly_listening_chart_html(
     df_tracks: pd.DataFrame,
     track_name: str,
     date_col: str = "date_écoute",
     duration_col: str = "temps_écoute",
     duration_unit: str = "seconds",
-    height: int = 460,
+    height: int = 400,
 ) -> str:
-    """
-    Retourne le HTML Plotly (div) prêt à injecter dans Jinja
-    pour le graphique 'temps d'écoute par mois' d'un titre.
-    Version robuste (div_id unique, pas de cache).
-    """
     import uuid
 
-    # -------------------------
-    # 1) Filtrage strict du titre
-    # -------------------------
     df_track = df_tracks[df_tracks["titre"] == track_name].copy()
     df_track = df_track.dropna(subset=["date_écoute", "temps_écoute"])
     df_track["date_écoute"] = pd.to_datetime(df_track["date_écoute"], errors="coerce")
     df_track = df_track.dropna(subset=["date_écoute"])
 
-    # Sécurité : si aucune donnée
     if df_track.empty:
         fig = go.Figure()
         fig.update_layout(
-            title=f"Aucune donnée pour {track_name}",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#888888"),
             height=height,
         )
         return fig.to_html(
@@ -657,27 +649,28 @@ def track_monthly_listening_chart_html(
             div_id=f"chart_{uuid.uuid4().hex}",
         )
 
-    # -------------------------
-    # 2) Génération de la figure
-    # -------------------------
     fig, _, _ = plot_listening_time_by_month_interactive(
         df_track,
         date_col=date_col,
         duration_col=duration_col,
         duration_unit=duration_unit,
-        title=f"Répartition du temps d'écoute par mois – {track_name}",
+        title="",
         height=height,
     )
 
-    # -------------------------
-    # 3) HTML Plotly avec div_id unique (ANTI CACHE)
-    # -------------------------
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#888888"),
+        margin=dict(l=40, r=20, t=10, b=40),
+        xaxis=dict(gridcolor="#2a2a2a", linecolor="#2a2a2a"),
+        yaxis=dict(gridcolor="#2a2a2a", linecolor="#2a2a2a"),
+    )
+    fig.update_traces(marker_color="#F2CC0D")
+
     return fig.to_html(
         full_html=False,
-        include_plotlyjs=False,  # Plotly chargé une seule fois dans base.html
-        config={
-            "displayModeBar": False,
-            "responsive": True,
-        },
-        div_id=f"chart_{uuid.uuid4().hex}",  # 🔑 empêche la réutilisation d'un ancien graphe
+        include_plotlyjs=False,
+        config={"displayModeBar": False, "responsive": True},
+        div_id=f"chart_{uuid.uuid4().hex}",
     )
