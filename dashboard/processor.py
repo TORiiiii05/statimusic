@@ -1,7 +1,8 @@
 from __future__ import annotations
 import base64
+import gzip
 import os
-from io import BytesIO
+from io import BytesIO, StringIO
 from PIL import Image
 import pandas as pd
 from dashboard.analytics.loaders import load_listening_history
@@ -86,17 +87,23 @@ def process_excel_and_build_stats(excel_path: str, market: str = "FR") -> dict:
         "top_albums": _serialize_albums(top_albums),
     }
 
-def serialize_df_tracks(df_tracks: pd.DataFrame) -> str:
-    import gzip
-    import base64
+
+def upload_df_to_storage(df_tracks: pd.DataFrame, user_id: str, supabase_client) -> str:
+    """Compresse et uploade df_tracks dans Supabase Storage. Retourne le path."""
     json_str = df_tracks.to_json(orient="records", date_format="iso", force_ascii=False)
     compressed = gzip.compress(json_str.encode("utf-8"))
-    return base64.b64encode(compressed).decode("utf-8")
+    path = f"{user_id}/df_tracks.json.gz"
+    supabase_client.storage.from_("user-data").upload(
+        path=path,
+        file=compressed,
+        file_options={"content-type": "application/gzip", "upsert": "true"},
+    )
+    return path
 
-def load_df_from_supabase(df_json_b64: str) -> pd.DataFrame:
-    import gzip, base64 as b64
-    from io import StringIO
-    raw = b64.b64decode(df_json_b64.encode("utf-8"))
+
+def download_df_from_storage(path: str, supabase_client) -> pd.DataFrame:
+    """Télécharge et désérialise df_tracks depuis Supabase Storage."""
+    raw = supabase_client.storage.from_("user-data").download(path)
     json_str = gzip.decompress(raw).decode("utf-8")
     df = pd.read_json(StringIO(json_str), orient="records")
     if "date_écoute" in df.columns:
@@ -104,18 +111,17 @@ def load_df_from_supabase(df_json_b64: str) -> pd.DataFrame:
     return df
 
 
-
 def build_search_index(df_tracks: pd.DataFrame) -> dict:
     """
     Construit un index de recherche léger depuis df_tracks.
-    Retourne un dict JSON-serializable stockable en session Flask.
+    Retourne un dict JSON-serializable stockable en Supabase.
     """
     index = {"artists": [], "albums": [], "tracks": []}
 
     if df_tracks is None or df_tracks.empty:
         return index
 
-    # Artistes — explosion sur virgule
+    # Artistes — explosion sur virgule pour gérer les feats
     if "artiste" in df_tracks.columns and "temps_écoute" in df_tracks.columns:
         df_exp = df_tracks.copy()
         df_exp["artiste"] = df_exp["artiste"].astype(str).str.split(",")

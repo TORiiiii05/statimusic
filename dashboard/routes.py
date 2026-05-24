@@ -1,53 +1,42 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_required, current_user
 import os
 import json
 import tempfile
-import gzip
-import base64 as b64
-from io import StringIO
-from flask import jsonify
-from flask import session
-from dashboard.processor import build_search_index
 
 import pandas as pd
 
-from db import supabase
+from db import supabase, supabase_admin
 from dashboard.analytics.loaders import load_listening_history
 from dashboard.analytics.spotify import get_spotify_token, search_track_by_isrc, image_getter
 from dashboard.analytics.track import get_track_kpis, track_monthly_listening_chart_html
-from dashboard.processor import (
-    process_excel_and_build_stats,
-    serialize_df_tracks,
-    _pil_to_b64,
-)
-
 from dashboard.analytics.album import get_album_kpis_by_id, get_album_top_titles_by_listen_time_by_id, album_monthly_listening_chart_html_by_id
 from dashboard.analytics.artist import get_artist_kpis_by_id, get_top_10_titles_by_listen_time, get_top_10_albums_by_listen_time
 from dashboard.analytics.spotify import get_album_by_id, get_artist_by_id
+from dashboard.processor import (
+    process_excel_and_build_stats,
+    upload_df_to_storage,
+    download_df_from_storage,
+    build_search_index,
+    _pil_to_b64,
+)
+
 dashboard_bp = Blueprint("dashboard", __name__)
 
 MARKET = os.getenv("SPOTIFY_MARKET", "FR")
 
 
-def _load_df_from_supabase(df_json_b64: str) -> pd.DataFrame:
-    """Décompresse et désérialise le df_tracks stocké en Supabase."""
-    raw = b64.b64decode(df_json_b64.encode("utf-8"))
-    json_str = gzip.decompress(raw).decode("utf-8")
-    df = pd.read_json(StringIO(json_str), orient="records")
-    if "date_écoute" in df.columns:
-        df["date_écoute"] = pd.to_datetime(df["date_écoute"], errors="coerce")
-    return df
+def _load_df_from_supabase(user_id: str) -> pd.DataFrame:
+    res = supabase.table("users").select("df_path").eq("id", user_id).execute()
+    if not res.data or not res.data[0].get("df_path"):
+        raise ValueError("Aucun historique trouvé. Merci d'uploader ton fichier Excel.")
+    return download_df_from_storage(res.data[0]["df_path"], supabase_admin)
 
-
-# ============================================================
-# HOME
-# ============================================================
 
 @dashboard_bp.route("/home")
 @login_required
 def home():
-    res = supabase.table("users").select("stats_json, df_json").eq("id", current_user.id).execute()
+    res = supabase.table("users").select("stats_json, df_path, search_index_json").eq("id", current_user.id).execute()
     stats = None
     if res.data and res.data[0].get("stats_json"):
         stats = json.loads(res.data[0]["stats_json"])
@@ -55,10 +44,9 @@ def home():
     if not stats:
         return redirect(url_for("dashboard.upload"))
 
-    # Stockage de l'index en Supabase si pas encore fait
-    if not res.data[0].get("search_index_json") and res.data[0].get("df_json"):
+    if not res.data[0].get("search_index_json") and res.data[0].get("df_path"):
         try:
-            df = _load_df_from_supabase(res.data[0]["df_json"])
+            df = _load_df_from_supabase(current_user.id)
             index = build_search_index(df)
             supabase.table("users").update({
                 "search_index_json": json.dumps(index, ensure_ascii=False)
@@ -68,10 +56,6 @@ def home():
 
     return render_template("dashboard/home.html", user=current_user, stats=stats)
 
-
-# ============================================================
-# UPLOAD
-# ============================================================
 
 @dashboard_bp.route("/upload", methods=["GET", "POST"])
 @login_required
@@ -86,22 +70,16 @@ def upload():
         f.save(tmp.name)
 
         try:
-            # Chargement unique du fichier
             loaded = load_listening_history(excel_path=tmp.name)
-
-            # Calcul des stats home (appelle Spotify pour les covers)
             stats = process_excel_and_build_stats(tmp.name, market=MARKET)
             stats_json = json.dumps(stats, ensure_ascii=False)
-
-            # Sérialisation du df_tracks brut
-            df_json = serialize_df_tracks(loaded.df_tracks)
+            df_path = upload_df_to_storage(loaded.df_tracks, current_user.id, supabase_admin)
 
             supabase.table("users").update({
                 "stats_json": stats_json,
-                "df_json": df_json,
+                "df_path": df_path,
             }).eq("id", current_user.id).execute()
 
-            # Reconstruction de l'index de recherche
             try:
                 index = build_search_index(loaded.df_tracks)
                 supabase.table("users").update({
@@ -109,10 +87,9 @@ def upload():
                 }).eq("id", current_user.id).execute()
             except Exception:
                 pass
-            
+
             flash("Ton historique a bien été importé !", "success")
             return redirect(url_for("dashboard.home"))
-        
 
         except Exception as e:
             return render_template("dashboard/upload.html", error=f"Erreur lors du traitement : {e}")
@@ -122,46 +99,32 @@ def upload():
     return render_template("dashboard/upload.html")
 
 
-# ============================================================
-# TRACK
-# ============================================================
-
 @dashboard_bp.route("/track/<isrc>")
 @login_required
 def track(isrc):
-    res = supabase.table("users").select("df_json").eq("id", current_user.id).execute()
-    if not res.data or not res.data[0].get("df_json"):
-        return redirect(url_for("dashboard.upload"))
-
     try:
-        df_tracks = _load_df_from_supabase(res.data[0]["df_json"])
+        df_tracks = _load_df_from_supabase(current_user.id)
     except Exception as e:
         return render_template("dashboard/upload.html", error=f"Erreur chargement données : {e}")
 
-    # Résoudre le track depuis l'ISRC via Spotify
     tok = get_spotify_token()
     sp = search_track_by_isrc(isrc, token=tok) if tok else None
 
-    # Priorité : nom depuis le df local (via ISRC) — plus fiable que Spotify
     track_name = None
     if "ISRC" in df_tracks.columns:
         match = df_tracks[df_tracks["ISRC"].astype(str).str.strip() == isrc]
         track_name = match["titre"].iloc[0] if not match.empty else None
-
-    # Fallback : nom Spotify
     if not track_name:
         track_name = sp.get("name") if sp else isrc
 
     kpis, main_artist = get_track_kpis(df_tracks, track_name)
 
-    # Cover depuis Spotify
     cover_b64 = None
     if sp and sp.get("image_url"):
         img = image_getter(sp["image_url"])
         cover_b64 = _pil_to_b64(img)
     kpis["cover"] = cover_b64
 
-    # Graphique mensuel
     try:
         chart_html = track_monthly_listening_chart_html(df_tracks, track_name)
     except Exception:
@@ -169,21 +132,17 @@ def track(isrc):
 
     return render_template("dashboard/track.html", kpis=kpis, chart_html=chart_html)
 
+
 @dashboard_bp.route("/album/<album_id>")
 @login_required
 def album(album_id):
-    res = supabase.table("users").select("df_json").eq("id", current_user.id).execute()
-    if not res.data or not res.data[0].get("df_json"):
-        return redirect(url_for("dashboard.upload"))
-
     try:
-        df_tracks = _load_df_from_supabase(res.data[0]["df_json"])
+        df_tracks = _load_df_from_supabase(current_user.id)
     except Exception as e:
         return render_template("dashboard/upload.html", error=f"Erreur chargement données : {e}")
 
     kpis, _ = get_album_kpis_by_id(df_tracks, album_id, market=MARKET)
 
-    # Cover
     tok = get_spotify_token()
     al = get_album_by_id(album_id, token=tok, market=MARKET) if tok else None
     cover_b64 = None
@@ -192,11 +151,9 @@ def album(album_id):
         cover_b64 = _pil_to_b64(img)
     kpis["cover"] = cover_b64
 
-    # Top titres
     top_tracks = get_album_top_titles_by_listen_time_by_id(df_tracks, album_id, market=MARKET)
     top_tracks_list = top_tracks.to_dict(orient="records") if not top_tracks.empty else []
 
-    # Graphique
     try:
         chart_html = album_monthly_listening_chart_html_by_id(df_tracks, album_id, market=MARKET)
     except Exception:
@@ -208,18 +165,13 @@ def album(album_id):
 @dashboard_bp.route("/artist/<artist_id>")
 @login_required
 def artist(artist_id):
-    res = supabase.table("users").select("df_json").eq("id", current_user.id).execute()
-    if not res.data or not res.data[0].get("df_json"):
-        return redirect(url_for("dashboard.upload"))
-
     try:
-        df_tracks = _load_df_from_supabase(res.data[0]["df_json"])
+        df_tracks = _load_df_from_supabase(current_user.id)
     except Exception as e:
         return render_template("dashboard/upload.html", error=f"Erreur chargement données : {e}")
 
     kpis = get_artist_kpis_by_id(df_tracks, df_tracks, artist_id, market=MARKET)
 
-    # Cover
     tok = get_spotify_token()
     ar = get_artist_by_id(artist_id, token=tok) if tok else None
     cover_b64 = None
@@ -227,7 +179,6 @@ def artist(artist_id):
         img = image_getter(ar["image_url"])
         cover_b64 = _pil_to_b64(img)
 
-    # Top titres et albums
     artist_name = kpis.get("artist_name", "")
     top_tracks = get_top_10_titles_by_listen_time(df_tracks, artist_name, market=MARKET)
     top_albums = get_top_10_albums_by_listen_time(df_tracks, artist_name, market=MARKET)
@@ -241,6 +192,7 @@ def artist(artist_id):
         top_tracks=top_tracks_list,
         top_albums=top_albums_list,
     )
+
 
 @dashboard_bp.route("/api/search")
 @login_required
@@ -259,55 +211,38 @@ def search():
 
     results = []
 
-    # Artistes
     count = 0
     for item in index["artists"]:
-        if count >= 4:
-            break
+        if count >= 4: break
         if q in item["search_key"]:
-            results.append({
-                "type": "artist",
-                "label": item["name"],
-                "name": item["name"],
-                "url": url_for("dashboard.resolve_artist", name=item["name"]),
-            })
+            results.append({"type": "artist", "label": item["name"], "name": item["name"],
+                "url": url_for("dashboard.resolve_artist", name=item["name"])})
             count += 1
 
-    # Albums
     count = 0
     for item in index["albums"]:
-        if count >= 3:
-            break
+        if count >= 3: break
         if q in item["search_key"]:
-            results.append({
-                "type": "album",
-                "label": f"{item['album']} — {item['artist']}",
-                "album": item["album"],
-                "artist": item["artist"],
-                "url": url_for("dashboard.resolve_album", album=item["album"], artist=item["artist"]),
-            })
+            results.append({"type": "album", "label": f"{item['album']} — {item['artist']}",
+                "album": item["album"], "artist": item["artist"],
+                "url": url_for("dashboard.resolve_album", album=item["album"], artist=item["artist"])})
             count += 1
 
-    # Tracks
     count = 0
     for item in index["tracks"]:
-        if count >= 3:
-            break
+        if count >= 3: break
         if q in item["search_key"]:
-            results.append({
-                "type": "track",
-                "label": f"{item['titre']} — {item['artist']}",
-                "url": url_for("dashboard.track", isrc=item["isrc"]),
-                "isrc": item["isrc"],
-            })
+            results.append({"type": "track", "label": f"{item['titre']} — {item['artist']}",
+                "url": url_for("dashboard.track", isrc=item["isrc"]), "isrc": item["isrc"]})
             count += 1
 
     return jsonify(results)
 
+
 @dashboard_bp.route("/search/resolve/artist")
 @login_required
 def resolve_artist():
-    from dashboard.analytics.spotify import get_spotify_token, search_artist
+    from dashboard.analytics.spotify import search_artist
     name = request.args.get("name", "").strip()
     if not name:
         return redirect(url_for("dashboard.home"))
@@ -322,7 +257,7 @@ def resolve_artist():
 @dashboard_bp.route("/search/resolve/album")
 @login_required
 def resolve_album():
-    from dashboard.analytics.spotify import get_spotify_token, search_album
+    from dashboard.analytics.spotify import search_album
     album = request.args.get("album", "").strip()
     artist = request.args.get("artist", "").strip()
     if not album:

@@ -1,14 +1,108 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="auth-container">
-    <h1>Importe ton historique Deezer</h1>
-    <p>Fichier Excel exporté depuis Deezer (feuille 10_listeningHistory)</p>
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="excel_file" accept=".xlsx" required>
-        <button type="submit">Analyser</button>
-    </form>
-    {% if error %}
-        <p style="color:red;">{{ error }}</p>
-    {% endif %}
+
+<div class="upload-page">
+
+    <div class="upload-header">
+        <h1>Importe ton historique Deezer</h1>
+        <p class="upload-subtitle">Analyse complète de toutes tes écoutes depuis la création de ton compte.</p>
+    </div>
+
+    <div class="upload-body">
+
+        <!-- Instructions -->
+        <div class="upload-steps">
+            <div class="upload-step">
+                <span class="step-number">1</span>
+                <div class="step-content">
+                    <h3>Demande tes données depuis ton compte Deezer</h3>
+                    <p>Dans ton compte Deezer, va dans <strong>Confidentialité</strong> et clique sur <strong>"Obtenir une copie de mes données"</strong>. Deezer t'enverra un email avec un lien de téléchargement sous <strong>10 à 20 jours</strong>.</p>
+                </div>
+            </div>
+            <div class="upload-step">
+                <span class="step-number">2</span>
+                <div class="step-content">
+                    <h3>Télécharge le fichier reçu par email</h3>
+                    <p>Deezer t'envoie directement un fichier Excel par email. <strong>Conserve uniquement ce fichier</strong> — il contient des données personnelles sensibles à ne pas partager en dehors de cette application.</p>
+                </div>
+            </div>
+            <div class="upload-step">
+                <span class="step-number">3</span>
+                <div class="step-content">
+                    <h3>Importe le fichier Excel</h3>
+                    <p>Importe uniquement ce fichier Excel ci-contre. <strong>Le site ne conserve pas ton fichier</strong> — seules tes statistiques d'écoute sont analysées et stockées.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drop zone -->
+        <form method="POST" enctype="multipart/form-data" id="upload-form" class="upload-form">
+            <div class="drop-zone" id="drop-zone">
+                <input type="file" name="excel_file" accept=".xlsx" id="file-input" class="drop-input">
+                <div class="drop-content" id="drop-content">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p class="drop-title">Glisse ton fichier ici</p>
+                    <p class="drop-sub">ou <span class="drop-browse">clique pour parcourir</span></p>
+                    <p class="drop-format">.xlsx uniquement</p>
+                </div>
+                <div class="drop-selected hidden" id="drop-selected">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F2CC0D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <p class="drop-filename" id="drop-filename"></p>
+                    <p class="drop-sub">Prêt à analyser</p>
+                </div>
+            </div>
+
+            {% if error %}
+            <p class="upload-error">{{ error }}</p>
+            {% endif %}
+
+            <button type="submit" class="btn-primary btn-upload" id="submit-btn" disabled>
+                Analyser mon historique
+            </button>
+
+            <p class="upload-warning">⏱ L'analyse peut prendre quelques minutes.</p>
+        </form>
+
+    </div>
+
 </div>
+
+<script>
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const dropContent = document.getElementById('drop-content');
+const dropSelected = document.getElementById('drop-selected');
+const dropFilename = document.getElementById('drop-filename');
+const submitBtn = document.getElementById('submit-btn');
+
+function handleFile(file) {
+    if (!file || !file.name.endsWith('.xlsx')) return;
+    dropFilename.textContent = file.name;
+    dropContent.classList.add('hidden');
+    dropSelected.classList.remove('hidden');
+    dropZone.classList.add('drop-zone--ready');
+    submitBtn.disabled = false;
+}
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--hover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--hover'));
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drop-zone--hover');
+    const file = e.dataTransfer.files[0];
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    fileInput.files = dt.files;
+    handleFile(file);
+});
+</script>
+
 {% endblock %}
