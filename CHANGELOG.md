@@ -6,6 +6,42 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
+## Session 5 — Production ✅
+*Mai 2026*
+
+**Réalisé :**
+- Migration `df_json` (colonne Supabase) → Supabase Storage (fichier `.parquet`)
+- Format Parquet (brotli) : JSON.gz 150 Mo RAM → Parquet ~40 Mo RAM (~75% de réduction)
+- `dashboard/processor.py` : `upload_df_to_storage` et `download_df_from_storage` avec pyarrow
+- `dashboard/analytics/loaders.py` : `usecols` pour ne lire que 6 colonnes depuis l'Excel, suppression `df_artists`
+- `dashboard/analytics/artist.py` : nettoyage 1137 → 280 lignes, suppression fonctions name-based, `.loc[mask, cols]` sans `.copy()`
+- `dashboard/analytics/album.py` : nettoyage 700 → 210 lignes, suppression recommandations et visualisations inutilisées
+- `dashboard/analytics/track.py` : nettoyage 676 → 220 lignes, suppression `get_track_artists_spotify`, `get_track_artists`
+- `db.py` : ajout `supabase_admin` avec secret key pour les opérations Storage
+- `gunicorn.conf.py` : timeout 300s pour l'upload de gros fichiers Excel
+- Bucket `user-data` créé dans Supabase Storage avec policies SQL
+- Colonne `df_path` (text, nullable) ajoutée à la table `users`
+- Nom de domaine `statimusic.fr` acheté sur OVHcloud (4,99€/an)
+- DNS configurés : enregistrement A `@` → `216.24.57.1` + CNAME `www` → `statimusic.onrender.com`
+- Domaine vérifié et SSL en cours de propagation sur Render
+
+**Connu / à faire plus tard :**
+- Pages détaillées lentes sur Render (0.1 CPU) → implémenter `artist_cache` table Supabase
+- Landing page non encore implémentée
+- Visualisations supplémentaires (frises chronologiques, répartition journée)
+- Propagation DNS `statimusic.fr` en cours (jusqu'à 24h)
+
+**Appris :**
+- Parquet (pyarrow) vs JSON.gz : même taille disque, 4x moins de RAM à la lecture
+- `usecols` dans `pd.read_excel` évite de charger les colonnes inutiles dès la lecture
+- `.loc[mask, cols]` sans `.copy()` réduit les pics mémoire lors des filtres pandas
+- Supabase Storage RLS : les policies doivent être créées via SQL Editor avec `bucket_id = 'user-data'`
+- DNS : enregistrement A pour le domaine racine, CNAME pour www
+- Gunicorn timeout par défaut 30s → insuffisant pour un upload + calcul Spotify → 300s
+- RAM ≠ vitesse : RAM = espace de travail, vitesse = CPU + algorithme
+
+---
+
 ## Session 4 — Recherche + Design ✅
 *Mai 2026*
 
@@ -16,29 +52,21 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 - `templates/dashboard/album.html` : même layout, table titres cliquable, graphique mensuel
 - `templates/dashboard/track.html` : même layout, liens artiste et album cliquables
 - `templates/auth/login.html` + `register.html` : design dark card avec logo
-- `templates/dashboard/upload.html` : design minimaliste dark card
+- `templates/dashboard/upload.html` : page pleine avec instructions 3 étapes + drag & drop
 - `static/styles.css` : design system complet (palette #191919/#333/#F0F0F0/#F2CC0D, Inter, composants navbar/podium/table/cards/charts)
 - Recherche : `/api/search` avec index en Supabase (`search_index_json`), suggestions temps réel, Enter pour valider, dropdown groupé par type
 - `dashboard/analytics/home.py` : `img_size=400` pour artistes, tracks et albums
-- `dashboard/analytics/track.py` : `fig.update_layout` fond transparent + couleur jaune + police Inter
+- `dashboard/analytics/track.py` : graphiques fond transparent + couleur jaune + police Inter
 - `dashboard/analytics/album.py` : même uniformisation des graphiques
-- `dashboard/analytics/artist.py` : filtre artiste exact (regex word-boundary) pour éviter les faux positifs (jul → julien doré)
-- `dashboard/analytics/spotify.py` : `search_album` avec scoring nom pour éviter les mauvaises covers
-- `dashboard/analytics/artist.py` : colonne `album` ajoutée dans `get_top_10_titles_by_listen_time`
+- `dashboard/analytics/artist.py` : filtre artiste exact (regex) pour éviter les faux positifs
+- `dashboard/analytics/spotify.py` : `search_album` avec scoring nom
 - `make_dev_excel.py` : script de génération d'un Excel de dev 10k lignes
 - Colonne `search_index_json` (text, nullable) ajoutée à la table `users` dans Supabase
 
-**Connu / à faire plus tard :**
-- Sons publiés / discographie affichent `—` à la première visite (calcul async Spotify)
-- Pages détaillées crashent sur Render plan gratuit (502) → à migrer vers Supabase Storage en Session 5
-- Landing page non encore implémentée
-
 **Appris :**
 - Index de recherche en Supabase plutôt qu'en session Flask (limite 4Ko cookie)
-- `pd.read_json` sur Windows interprète les longues strings comme des chemins → `StringIO`
-- Regex word-boundary pour filtrer les artistes exacts dans un champ multi-artistes séparé par virgules
+- Regex word-boundary pour filtrer les artistes exacts dans un champ multi-artistes
 - Spotify trie les images par taille décroissante → `images[0]` = la plus grande (640x640)
-- `img_size` dans `covers_getter` contrôle la résolution stockée en base64
 
 ---
 
@@ -53,14 +81,12 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 - `dashboard/processor.py` : ajout `serialize_df_tracks` + `load_df_from_supabase`
 - Colonne `df_json` (text, nullable) ajoutée à la table `users` dans Supabase
 - Compression gzip + base64 du df_tracks pour passer le timeout Supabase
-- Fix `pd.read_json` sur Windows : passage par `StringIO`
 - Fix `_ensure_month_start` : suppression du `raise ValueError` sur dates NaN → `dropna`
 
 **Appris :**
 - `pd.read_json` interprète les longues strings comme des chemins fichier → toujours passer par `StringIO`
 - Compression gzip réduit un JSON de 10x → résout les timeouts Supabase sur plan gratuit
 - Indexation track par ISRC (universel) plutôt que Spotify ID (instable)
-- `get_artist_kpis_by_id` prend `df_tracks` ET `df_artists` en arguments séparés
 
 ---
 
@@ -108,10 +134,9 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
-## Session 5 — Production ⏳
-*À venir*
+## À venir — Améliorations futures
 
-- [ ] Migrer df_json vers Supabase Storage (fichier .json.gz) → résoudre crash RAM sur Render (502)
-- [ ] Nom de domaine statimusic.fr
-- [ ] Optimisations performances
-- [ ] Landing page
+- [ ] `artist_cache` table Supabase → pages détaillées instantanées
+- [ ] Landing page `statimusic.fr`
+- [ ] Visualisations supplémentaires (frises chronologiques, répartition horaire)
+- [ ] Multi-utilisateurs → plan Render Standard ($25/mois) si nécessaire

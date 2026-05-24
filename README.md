@@ -2,7 +2,7 @@
 
 Transforme ton historique d'écoute Deezer en dashboard musical personnel.
 
-> **Accès au site** → [statimusic.onrender.com](https://statimusic.onrender.com)
+> **Accès au site** → [statimusic.fr](https://statimusic.fr)
 
 ---
 
@@ -21,10 +21,11 @@ Tu as déjà téléchargé tes données personnelles Deezer ? statimusic les tra
 ## Stack technique
 
 - **Backend** : Flask (Python)
-- **Base de données** : Supabase (PostgreSQL)
+- **Base de données** : Supabase (PostgreSQL + Storage)
 - **Hébergement** : Render
 - **API** : Spotify (photos artistes et covers)
 - **Design** : CSS custom, Inter font, dark mode
+- **Domaine** : statimusic.fr (OVHcloud)
 
 ---
 
@@ -47,6 +48,7 @@ Crée un fichier `.env` à la racine :
 SECRET_KEY=ta_clé_secrète
 SUPABASE_URL=ton_url_supabase
 SUPABASE_KEY=ta_clé_supabase
+SUPABASE_SECRET_KEY=ta_secret_key_supabase
 SPOTIFY_CLIENT_ID=ton_client_id
 SPOTIFY_CLIENT_SECRET=ton_client_secret
 SPOTIFY_MARKET=FR
@@ -80,4 +82,4 @@ Puis uploade `deezer_data_10k.xlsx` depuis la page `/upload`.
 - [x] Session 2 — Upload Excel + Dashboard
 - [x] Session 3 — Pages détaillées artiste / album / titre
 - [x] Session 4 — Recherche + Design
-- [ ] Session 5 — Production (Supabase Storage, domaine, perf)
+- [x] Session 5 — Production (Supabase Storage, Parquet, domaine statimusic.fr)
