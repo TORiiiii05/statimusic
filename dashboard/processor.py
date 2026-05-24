@@ -88,9 +88,15 @@ def process_excel_and_build_stats(excel_path: str, market: str = "FR") -> dict:
     }
 
 
+COLS_TO_STORE = ["artiste", "titre", "album", "ISRC", "temps_écoute", "date_écoute"]
+
 def upload_df_to_storage(df_tracks: pd.DataFrame, user_id: str, supabase_client) -> str:
     """Compresse et uploade df_tracks dans Supabase Storage. Retourne le path."""
-    json_str = df_tracks.to_json(orient="records", date_format="iso", force_ascii=False)
+    # Garde uniquement les colonnes nécessaires pour réduire la mémoire
+    cols = [c for c in COLS_TO_STORE if c in df_tracks.columns]
+    df_slim = df_tracks[cols].copy()
+    
+    json_str = df_slim.to_json(orient="records", date_format="iso", force_ascii=False)
     compressed = gzip.compress(json_str.encode("utf-8"))
     path = f"{user_id}/df_tracks.json.gz"
     supabase_client.storage.from_("user-data").upload(
@@ -99,7 +105,6 @@ def upload_df_to_storage(df_tracks: pd.DataFrame, user_id: str, supabase_client)
         file_options={"content-type": "application/gzip", "upsert": "true"},
     )
     return path
-
 
 def download_df_from_storage(path: str, supabase_client) -> pd.DataFrame:
     """Télécharge et désérialise df_tracks depuis Supabase Storage."""
