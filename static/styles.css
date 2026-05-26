@@ -549,3 +549,227 @@ a.detail-sub { transition: color 0.2s; }
 .upload-error { font-size: 0.85rem; color: #cf6f6f; text-align: center; }
 
 .hidden { display: none !important; }
+
+/* ============================================================
+   LANDING PAGE
+   ============================================================ */
+.landing-body {
+    background: #191919;
+    color: #F0F0F0;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Navbar */
+.landing-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 64px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(25, 25, 25, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.landing-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.landing-btn-outline {
+    padding: 8px 20px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #ccc;
+    transition: border-color 0.2s, color 0.2s;
+}
+.landing-btn-outline:hover { border-color: #F2CC0D; color: #F0F0F0; }
+
+.landing-btn-yellow {
+    padding: 8px 20px;
+    background: #F2CC0D;
+    color: #191919;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    transition: opacity 0.2s;
+}
+.landing-btn-yellow:hover { opacity: 0.88; }
+
+.landing-btn-large {
+    padding: 14px 32px;
+    font-size: 1rem;
+    border-radius: 10px;
+}
+
+/* Hero */
+.landing-hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding-top: 64px;
+}
+
+.hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+#hero-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 800px;
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.hero-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: #F0F0F0;
+}
+
+.hero-questions {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: #ccc;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.hero-desc {
+    font-size: 0.95rem;
+    color: #888;
+    max-width: 520px;
+    line-height: 1.7;
+}
+
+/* Features */
+.landing-features {
+    padding: 100px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.features-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 48px;
+    color: #F0F0F0;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.feature-card {
+    background: #222;
+    border: 1px solid #2e2e2e;
+    border-radius: 16px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: border-color 0.2s, transform 0.2s;
+}
+.feature-card:hover { border-color: #F2CC0D; transform: translateY(-4px); }
+
+.feature-icon {
+    width: 64px;
+    height: 64px;
+    background: #2a2a2a;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.feature-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #F0F0F0;
+}
+
+.feature-card p {
+    font-size: 0.92rem;
+    color: #888;
+    line-height: 1.7;
+}
+.feature-card strong { color: #ccc; }
+
+/* About */
+.landing-about {
+    background: #1e1e1e;
+    border-top: 1px solid #2a2a2a;
+    border-bottom: 1px solid #2a2a2a;
+    padding: 80px 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.landing-about h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.landing-about p {
+    font-size: 1rem;
+    color: #888;
+    max-width: 600px;
+    line-height: 1.7;
+}
+
+.about-highlight {
+    color: #F2CC0D !important;
+    font-weight: 600;
+    font-size: 1rem !important;
+}
+
+/* Footer */
+.landing-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 40px;
+    background: #191919;
+}
+.landing-footer span { font-size: 0.75rem; color: #555; }
+
+/* Responsive */
+@media (max-width: 700px) {
+    .landing-nav { padding: 0 16px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .landing-features { padding: 60px 16px; }
+    .landing-about { padding: 60px 16px; }
+    .landing-footer { padding: 20px 16px; }
+}

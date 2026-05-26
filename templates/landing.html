@@ -1,1 +1,160 @@
- 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>statimusic — Votre écoute musicale en chiffres</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="landing-body">
+
+    <!-- NAVBAR -->
+    <nav class="landing-nav">
+        <a href="{{ url_for('auth.landing') }}" class="nav-logo">
+            <img src="{{ url_for('static', filename='logo_blanc.png') }}" alt="statimusic" height="32">
+        </a>
+        <div class="landing-nav-links">
+            <a href="{{ url_for('auth.login') }}" class="landing-btn-outline">Se connecter</a>
+            <a href="{{ url_for('auth.register') }}" class="landing-btn-yellow">Créer un compte</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="landing-hero">
+        <div class="hero-bg">
+            <canvas id="hero-canvas"></canvas>
+        </div>
+        <div class="hero-content">
+            <h1 class="hero-title">Votre écoute musicale<br>en chiffres</h1>
+            <p class="hero-questions">
+                Qui est l'artiste que vous saignez&nbsp;?
+                Le titre qui vous reste en tête&nbsp;?<br>
+                L'album qui ne vous lâche pas&nbsp;?
+            </p>
+            <p class="hero-desc">
+                Découvrez les réponses en important votre historique Deezer —
+                c'est gratuit, vos données restent chez vous.
+            </p>
+            <a href="{{ url_for('auth.register') }}" class="landing-btn-yellow landing-btn-large">
+                Commencer maintenant
+            </a>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="landing-features">
+        <h2 class="features-title">Une expérience personnelle et complète</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F2CC0D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                    </svg>
+                </div>
+                <h3>Classement complet</h3>
+                <p>Le <strong>classement complet</strong> de vos artistes, titres et albums favoris. Découvrez le nombre de fois que vous avez mis votre titre préféré en boucle et soupirez devant le temps que vous avez passé à écouter le même artiste.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F2CC0D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <h3>Habitudes d'écoute</h3>
+                <p>Vos <strong>habitudes d'écoutes</strong> depuis la création de votre compte. Identifiez votre mois le plus musical — celui où vous n'avez pas arrêté d'écouter.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F2CC0D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                </div>
+                <h3>Informations détaillées</h3>
+                <p>Des <strong>informations détaillées</strong> sur votre relation aux artistes, titres et albums. Trouvez la date de votre première écoute, vos sons préférés d'un artiste et le mois où vous avez saigné un album.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- VOLONTÉ -->
+    <section class="landing-about">
+        <h2>La volonté du site</h2>
+        <p>L'objectif du site est d'apporter une nouvelle vision sur votre consommation de musique.</p>
+        <p>Aucune donnée est récoltée et aucun argent est gagné, simplement proposer un service qui n'existe nul part ailleurs :</p>
+        <p class="about-highlight">Une analyse statistique gratuite de tout votre historique d'écoute.</p>
+        <a href="{{ url_for('auth.register') }}" class="landing-btn-yellow landing-btn-large" style="margin-top: 32px; display: inline-block;">
+            Importer mon historique
+        </a>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="landing-footer">
+        <img src="{{ url_for('static', filename='logo_blanc.png') }}" alt="statimusic" height="28">
+        <span>Statimusic © 2026. All rights reserved.</span>
+    </footer>
+
+    <script>
+    // Animation canvas — formes géométriques flottantes
+    const canvas = document.getElementById('hero-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const shapes = Array.from({length: 18}, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 80 + 30,
+        speedX: (Math.random() - 0.5) * 0.4,
+        speedY: (Math.random() - 0.5) * 0.4,
+        opacity: Math.random() * 0.12 + 0.04,
+        borderRadius: Math.random() > 0.5 ? '50%' : '12px',
+        isCircle: Math.random() > 0.5,
+    }));
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        shapes.forEach(s => {
+            s.x += s.speedX;
+            s.y += s.speedY;
+            if (s.x < -s.size) s.x = canvas.width + s.size;
+            if (s.x > canvas.width + s.size) s.x = -s.size;
+            if (s.y < -s.size) s.y = canvas.height + s.size;
+            if (s.y > canvas.height + s.size) s.y = -s.size;
+
+            ctx.save();
+            ctx.globalAlpha = s.opacity;
+            ctx.fillStyle = '#F2CC0D';
+            ctx.beginPath();
+            if (s.isCircle) {
+                ctx.arc(s.x, s.y, s.size / 2, 0, Math.PI * 2);
+            } else {
+                const r = 12;
+                const x = s.x - s.size / 2;
+                const y = s.y - s.size / 2;
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + s.size - r, y);
+                ctx.quadraticCurveTo(x + s.size, y, x + s.size, y + r);
+                ctx.lineTo(x + s.size, y + s.size - r);
+                ctx.quadraticCurveTo(x + s.size, y + s.size, x + s.size - r, y + s.size);
+                ctx.lineTo(x + r, y + s.size);
+                ctx.quadraticCurveTo(x, y + s.size, x, y + s.size - r);
+                ctx.lineTo(x, y + r);
+                ctx.quadraticCurveTo(x, y, x + r, y);
+            }
+            ctx.fill();
+            ctx.restore();
+        });
+        requestAnimationFrame(draw);
+    }
+    draw();
+    </script>
+
+</body>
+</html>

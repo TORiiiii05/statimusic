@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
 from models import User
 from db import supabase
@@ -61,3 +62,10 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("auth.login")) 
+
+
+@auth_bp.route("/landing")
+def landing():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.home"))
+    return render_template("landing.html")

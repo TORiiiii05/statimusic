@@ -1,12 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="auth-container">
-    <h1>Créer un compte</h1>
-    <form method="POST">
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Mot de passe" required>
-        <button type="submit">Créer mon compte</button>
-    </form>
-    <p>Déjà un compte ? <a href="{{ url_for('auth.login') }}">Se connecter</a></p>
+<div class="auth-page">
+    <div class="auth-card">
+        <img src="{{ url_for('static', filename='logo_blanc.png') }}" alt="statimusic" height="36" class="auth-logo">
+        <h1>Créer un compte</h1>
+        <form method="POST" class="auth-form">
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Mot de passe" required>
+            <button type="submit" class="btn-primary">Créer mon compte</button>
+        </form>
+        <p class="auth-switch">Déjà un compte ? <a href="{{ url_for('auth.login') }}">Se connecter</a></p>
+    </div>
 </div>
-{% endblock %}  
+{% endblock %}

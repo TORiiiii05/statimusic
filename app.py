@@ -28,5 +28,14 @@ from dashboard.routes import dashboard_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
 
+from flask import redirect, url_for
+from flask_login import current_user
+
+@app.route("/")
+def index():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.home"))
+    return redirect(url_for("auth.landing"))
+
 if __name__ == "__main__":
     app.run(debug=True)

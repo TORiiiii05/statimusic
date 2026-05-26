@@ -15,6 +15,7 @@ Tu as déjà téléchargé tes données personnelles Deezer ? statimusic les tra
 - Ton top artistes, titres et albums avec leurs photos (podium 2-1-3)
 - Des pages détaillées par artiste, album et titre avec graphiques
 - Une barre de recherche avec suggestions en temps réel
+- Une landing page publique pour présenter le projet
 
 ---
 
@@ -22,10 +23,42 @@ Tu as déjà téléchargé tes données personnelles Deezer ? statimusic les tra
 
 - **Backend** : Flask (Python)
 - **Base de données** : Supabase (PostgreSQL + Storage)
-- **Hébergement** : Render
+- **Hébergement** : Render (plan gratuit)
 - **API** : Spotify (photos artistes et covers)
-- **Design** : CSS custom, Inter font, dark mode
+- **Design** : CSS custom, Inter font, dark mode (#191919 / #F2CC0D)
 - **Domaine** : statimusic.fr (OVHcloud)
+- **Format données** : Parquet (pyarrow + brotli) pour optimiser la RAM
+
+---
+
+## Architecture
+
+```
+statimusic/
+├── app.py                          # Point d'entrée Flask
+├── config.py                       # Variables d'environnement
+├── db.py                           # Clients Supabase (public + admin)
+├── models.py                       # Classe User (Flask-Login)
+├── auth/
+│   └── routes.py                   # /login, /register, /logout, /landing
+├── dashboard/
+│   ├── routes.py                   # /home, /upload, /track, /album, /artist, /api/search
+│   ├── processor.py                # Traitement Excel, Storage, index recherche
+│   └── analytics/
+│       ├── loaders.py              # Lecture Excel Deezer
+│       ├── spotify.py              # Appels API Spotify
+│       ├── home.py                 # KPIs et top home
+│       ├── artist.py               # KPIs page artiste
+│       ├── album.py                # KPIs page album
+│       └── track.py                # KPIs page titre
+├── templates/
+│   ├── base.html                   # Navbar + footer (pages connectées)
+│   ├── landing.html                # Page d'accueil publique
+│   └── dashboard/ + auth/          # Templates des pages
+└── static/
+    ├── styles.css                  # Design system complet
+    └── logo_blanc.png
+```
 
 ---
 
@@ -58,7 +91,7 @@ Lance le serveur :
 
 ```bash
 python app.py
-# Ouvre http://localhost:5000/register
+# Ouvre http://localhost:5000
 ```
 
 ---
@@ -73,6 +106,8 @@ python make_dev_excel.py
 
 Puis uploade `deezer_data_10k.xlsx` depuis la page `/upload`.
 
+**Note :** Les pages détaillées (artiste, album, titre) peuvent être lentes sur Render plan gratuit (0.1 CPU). En local elles sont fluides.
+
 ---
 
 ## Roadmap
@@ -83,3 +118,5 @@ Puis uploade `deezer_data_10k.xlsx` depuis la page `/upload`.
 - [x] Session 3 — Pages détaillées artiste / album / titre
 - [x] Session 4 — Recherche + Design
 - [x] Session 5 — Production (Supabase Storage, Parquet, domaine statimusic.fr)
+- [x] Session 6 — Landing page + Navigation
+- [ ] Session 7 — Visualisations + Cache artiste + Page Mon compte

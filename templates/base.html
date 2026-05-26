@@ -27,7 +27,7 @@
 
         <div class="nav-links">
             <a href="{{ url_for('dashboard.upload') }}" class="nav-link">Mettre à jour</a>
-            <a href="#" class="nav-link">Mon compte</a>
+            <a href="{{ url_for('auth.logout') }}" class="nav-link">Se déconnecter</a>
         </div>
     </nav>
     {% endif %}

@@ -6,6 +6,31 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
+## Session 6 — Landing page + Navigation ✅
+*Mai 2026*
+
+**Réalisé :**
+- `templates/landing.html` : page d'accueil publique complète avec navbar, hero animé, features, section "La volonté du site", footer
+- Animation canvas hero : formes géométriques jaunes flottantes en CSS/JS vanilla
+- `app.py` : route `/` — redirige vers landing si non connecté, vers `/home` si connecté
+- `auth/routes.py` : route `/landing` publique avec redirection si déjà connecté
+- `static/styles.css` : CSS landing (navbar fixe avec blur, hero plein écran, features grid, about, footer)
+- `base.html` : bouton "Mon compte" remplacé par "Se déconnecter" → `url_for('auth.logout')`
+- `templates/auth/register.html` + `login.html` : correction classe `auth-container` → `auth-page` + `auth-card`
+
+**Texte landing :**
+- Titre : "Votre écoute musicale en chiffres"
+- Sous-titre : questions percutantes ciblant l'audience rap/musique
+- Description : accent sur gratuité et confidentialité des données
+- CTA : "Commencer maintenant" + "Importer mon historique"
+
+**Appris :**
+- Canvas HTML5 pour animations légères sans librairie externe
+- `backdrop-filter: blur()` pour navbar transparente pro
+- `clamp()` CSS pour typographie responsive sans media queries
+
+---
+
 ## Session 5 — Production ✅
 *Mai 2026*
 
@@ -23,13 +48,7 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 - Colonne `df_path` (text, nullable) ajoutée à la table `users`
 - Nom de domaine `statimusic.fr` acheté sur OVHcloud (4,99€/an)
 - DNS configurés : enregistrement A `@` → `216.24.57.1` + CNAME `www` → `statimusic.onrender.com`
-- Domaine vérifié et SSL en cours de propagation sur Render
-
-**Connu / à faire plus tard :**
-- Pages détaillées lentes sur Render (0.1 CPU) → implémenter `artist_cache` table Supabase
-- Landing page non encore implémentée
-- Visualisations supplémentaires (frises chronologiques, répartition journée)
-- Propagation DNS `statimusic.fr` en cours (jusqu'à 24h)
+- Domaine vérifié et SSL actif sur Render
 
 **Appris :**
 - Parquet (pyarrow) vs JSON.gz : même taille disque, 4x moins de RAM à la lecture
@@ -137,6 +156,6 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 ## À venir — Améliorations futures
 
 - [ ] `artist_cache` table Supabase → pages détaillées instantanées
-- [ ] Landing page `statimusic.fr`
 - [ ] Visualisations supplémentaires (frises chronologiques, répartition horaire)
 - [ ] Multi-utilisateurs → plan Render Standard ($25/mois) si nécessaire
+- [ ] Page "Mon compte" : changement de mot de passe, suppression du compte
