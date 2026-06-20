@@ -16,7 +16,7 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
   - `nb_artists` : split multi-artistes par virgule + explode + nunique (ex : "Bon Entendeur, Mouloudji" = 2 artistes)
   - Ajout `import re`
 - `dashboard/analytics/artist.py` :
-  - `get_artist_rank` : remplacement filtre exact (`== target`) par regex word-boundary pour capter les feats
+  - `get_artist_rank` : classement entier reconstruit par split + explode sur la colonne artiste (cohérent avec `nb_artists` dans home.py) — filtre écoutes > 0, groupby sur `artiste_split`, lookup exact sur le nom cible
   - `get_total_listen_minutes` : même correctif regex
   - `_get_albums_and_appears_on` → renommée `_get_albums`, `include_groups` restreint à `album,single` (suppression `appears_on`)
   - `get_total_tracks_by_artist_id` : déduplication par ISRC (via `_get_full_tracks_batch` sur `/tracks?ids=...`) avec fallback nom normalisé ; peuple `_catalogue_isrcs_cache`

@@ -214,18 +214,19 @@ def get_artist_rank(df_tracks: pd.DataFrame, artist_name: str) -> Optional[int]:
         return None
     if not {"artiste", "temps_écoute"}.issubset(df_tracks.columns):
         return None
+    df_pos = df_tracks[pd.to_numeric(df_tracks["temps_écoute"], errors="coerce").fillna(0) > 0].copy()
+    df_pos["artiste_split"] = df_pos["artiste"].astype(str).apply(
+        lambda s: [a.strip() for a in re.split(r",\s*", s) if a.strip()]
+    )
+    exploded = df_pos.explode("artiste_split")
     grp = (
-        df_tracks.assign(
-            artiste=df_tracks["artiste"].astype(str).str.strip(),
-            temps_écoute=pd.to_numeric(df_tracks["temps_écoute"], errors="coerce").fillna(0)
-        )
-        .groupby("artiste", as_index=False)["temps_écoute"]
+        exploded.groupby("artiste_split", as_index=False)["temps_écoute"]
         .sum()
         .sort_values("temps_écoute", ascending=False)
         .reset_index(drop=True)
     )
-    pattern = rf"(?i)(^|,\s*){re.escape(artist_name.strip())}(\s*,|$)"
-    hit = grp.index[grp["artiste"].str.contains(pattern, regex=True, na=False)].tolist()
+    target = artist_name.strip()
+    hit = grp.index[grp["artiste_split"] == target].tolist()
     return int(hit[0] + 1) if hit else None
 
 
