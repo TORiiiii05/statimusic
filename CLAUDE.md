@@ -170,13 +170,13 @@ statimusic/
 ## Roadmap — sessions de développement
 
 Le projet suit un plan structuré en sessions. Chaque session a un périmètre défini.
-**Session en cours : Session 8.**
+**Session en cours : Session 9.**
 
 | Session | Contenu | Durée estimée | Statut |
 |---------|---------|---------------|--------|
 | 1–6 | Auth, upload, stats, design, optimisations prod, landing | — | ✅ Terminées |
 | **7** | Correction des indicateurs faux/suspects (`home.py`, `artist.py`) | ~8h | ✅ Terminée |
-| 8 | Mot de passe oublié (Brevo + tokens Supabase) | ~3h | ⏳ |
+| 8 | Mot de passe oublié (Brevo + tokens Supabase) | ~3h | ✅ Terminée |
 | 9 | Fichier démo Deezer simulé + intégration page upload | ~3h | ⏳ |
 | 10 | Import historique Spotify (loader JSON, upload, indicateurs) | ~8h | ⏳ |
 | 11 | Cache visualisations + port horloge d'écoute + répartition mensuelle home | ~5h | ⏳ |

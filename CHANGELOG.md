@@ -19,13 +19,15 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
-## Session 8 — Mot de passe oublié (à venir)
+## Session 8 — Mot de passe oublié ✅
+*Juin 2026*
 
-- Ajout table `password_reset_tokens` dans Supabase
-- Route `/forgot-password` (GET/POST) — envoi email via Brevo
-- Route `/reset-password/<token>` (GET/POST) — vérification token, update hash
-- Templates HTML forgot-password et reset-password
-- Variable d'environnement `BREVO_API_KEY` sur Render
+- `config.py` : ajout `BREVO_API_KEY` et `CONTACT_EMAIL`
+- `auth/email.py` : helper `send_reset_email` via API HTTP Brevo (POST `/v3/smtp/email`)
+- `auth/routes.py` : route `/forgot-password` — génère token UUID4, insère dans `password_reset_tokens` (TTL 1h), envoie email ; message générique anti-énumération
+- `auth/routes.py` : route `/reset-password/<token>` — vérifie token non expiré et non utilisé, hash bcrypt, update `users.password_hash`, marque token `used = TRUE`
+- `templates/auth/forgot_password.html` + `reset_password.html` : nouveaux templates dark mode
+- `templates/auth/login.html` : ajout lien "Mot de passe oublié ?"
 
 ---
 

@@ -9,4 +9,6 @@ class Config:
     SUPABASE_KEY = os.getenv("SUPABASE_KEY")
     SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
     SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
-    SPOTIFY_MARKET = os.getenv("SPOTIFY_MARKET", "FR") 
+    SPOTIFY_MARKET = os.getenv("SPOTIFY_MARKET", "FR")
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
+    CONTACT_EMAIL = "contact@statimusic.fr"
