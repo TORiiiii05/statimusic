@@ -38,6 +38,7 @@ _TOTAL_TRACKS_TTL_SECONDS = 24 * 3600
 _cache_albums: dict[tuple, list] = {}
 _cache_top_titles: dict[tuple, pd.DataFrame] = {}
 _cache_top_albums: dict[tuple, pd.DataFrame] = {}
+_catalogue_isrcs_cache: dict[str, set] = {}
 
 
 def _norm_id(artist_id: str) -> str:
@@ -86,12 +87,12 @@ def get_total_tracks_cached_value_id(artist_id: str) -> int | None:
     return _total_tracks_value_id.get(_norm_id(artist_id))
 
 
-def _get_albums_and_appears_on(artist_id: str, token: str) -> list[dict]:
-    key = (artist_id, "full")
+def _get_albums(artist_id: str, token: str) -> list[dict]:
+    key = (artist_id, "albums_singles")
     if key in _cache_albums:
         return _cache_albums[key]
     albums: list[dict] = []
-    params = {"include_groups": "album,single,appears_on", "limit": 50, "offset": 0}
+    params = {"include_groups": "album,single", "limit": 50, "offset": 0}
     while True:
         r = spotify_get(f"{SPOTIFY_API_BASE}/artists/{artist_id}/albums", token=token, params=params)
         data = r.json()
@@ -101,6 +102,19 @@ def _get_albums_and_appears_on(artist_id: str, token: str) -> list[dict]:
         params["offset"] += 50
     _cache_albums[key] = albums
     return albums
+
+
+def _get_full_tracks_batch(track_ids: list[str], token: str) -> list[dict]:
+    results: list[dict] = []
+    for i in range(0, len(track_ids), 50):
+        batch = track_ids[i:i + 50]
+        r = spotify_get(
+            f"{SPOTIFY_API_BASE}/tracks",
+            token=token,
+            params={"ids": ",".join(batch)},
+        )
+        results.extend(t for t in (r.json().get("tracks") or []) if t)
+    return results
 
 
 def _get_tracks(album_id: str, token: str) -> list[dict]:
@@ -126,17 +140,27 @@ def get_total_tracks_by_artist_id(artist_id: str, token: str | None = None) -> i
     cache_key = f"id:{aid}"
     if cache_key in _total_tracks_value_id:
         return _total_tracks_value_id[cache_key]
-    albums = _get_albums_and_appears_on(aid, tok)
+    albums = _get_albums(aid, tok)
     album_ids = [a["id"] for a in albums if a.get("id")]
-    unique_names: set[str] = set()
+    track_ids: list[str] = []
     with ThreadPoolExecutor(max_workers=10) as exe:
         for track_list in exe.map(lambda alb_id: _get_tracks(alb_id, tok), album_ids):
             for t in track_list:
                 if aid in [art["id"] for art in t.get("artists", [])]:
-                    name = (t.get("name") or "").strip().lower()
-                    if name:
-                        unique_names.add(name)
-    total = len(unique_names)
+                    if t.get("id"):
+                        track_ids.append(t["id"])
+    full_tracks = _get_full_tracks_batch(track_ids, tok)
+    unique_keys: set[str] = set()
+    for t in full_tracks:
+        isrc = (t.get("external_ids") or {}).get("isrc", "").strip()
+        if isrc:
+            unique_keys.add(isrc)
+        else:
+            name = (t.get("name") or "").strip().lower()
+            if name:
+                unique_keys.add(f"__name__{name}")
+    _catalogue_isrcs_cache[aid] = unique_keys
+    total = len(unique_keys)
     _total_tracks_value_id[cache_key] = total
     return total
 
@@ -200,8 +224,8 @@ def get_artist_rank(df_tracks: pd.DataFrame, artist_name: str) -> Optional[int]:
         .sort_values("temps_écoute", ascending=False)
         .reset_index(drop=True)
     )
-    target = artist_name.strip()
-    hit = grp.index[grp["artiste"] == target].tolist()
+    pattern = rf"(?i)(^|,\s*){re.escape(artist_name.strip())}(\s*,|$)"
+    hit = grp.index[grp["artiste"].str.contains(pattern, regex=True, na=False)].tolist()
     return int(hit[0] + 1) if hit else None
 
 
@@ -223,7 +247,8 @@ def get_total_listen_minutes(df_tracks: pd.DataFrame, artist_name: str) -> int:
         return 0
     if not {"artiste", "temps_écoute"}.issubset(df_tracks.columns):
         return 0
-    mask = df_tracks["artiste"].astype(str).str.strip() == artist_name.strip()
+    pattern = rf"(?i)(^|,\s*){re.escape(artist_name.strip())}(\s*,|$)"
+    mask = df_tracks["artiste"].astype(str).str.contains(pattern, regex=True, na=False)
     total = pd.to_numeric(df_tracks.loc[mask, "temps_écoute"], errors="coerce").fillna(0).sum()
     return int(round(float(total) / 60.0))
 
@@ -290,15 +315,20 @@ def get_discography_coverage_by_id(df_tracks: pd.DataFrame, artist_id: str, arti
     tok = token or get_spotify_token()
     if not tok:
         return None
-    published_count = get_total_tracks_by_artist_id(artist_id, token=tok)
-    if not isinstance(published_count, int) or published_count <= 0:
+    aid = _norm_id(artist_id)
+    if aid not in _catalogue_isrcs_cache:
+        get_total_tracks_by_artist_id(aid, token=tok)
+    catalogue_keys = _catalogue_isrcs_cache.get(aid, set())
+    catalogue_isrcs = {k for k in catalogue_keys if not k.startswith("__name__")}
+    if not catalogue_isrcs:
         return None
-    if df_tracks is None or df_tracks.empty or "titre" not in df_tracks.columns:
+    if df_tracks is None or df_tracks.empty or "ISRC" not in df_tracks.columns:
         return 0.0
-    pattern = rf"\b{re.escape(str(artist_name).strip())}\b"
-    mask = df_tracks["artiste"].astype(str).str.strip().str.contains(pattern, case=False, na=False, regex=True)
-    listened_count = df_tracks.loc[mask, "titre"].astype(str).str.strip().str.lower().nunique()
-    return listened_count / published_count
+    pattern = rf"(?i)(^|,\s*){re.escape(artist_name.strip())}(\s*,|$)"
+    mask = df_tracks["artiste"].astype(str).str.contains(pattern, regex=True, na=False)
+    listened_isrcs = set(df_tracks.loc[mask, "ISRC"].astype(str).str.strip().unique()) - {"", "nan"}
+    intersection = listened_isrcs & catalogue_isrcs
+    return len(intersection) / len(catalogue_isrcs)
 
 
 # ============================================================

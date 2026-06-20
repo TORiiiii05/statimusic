@@ -6,6 +6,25 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
+## Session 7 — Correction des indicateurs 🔄
+*Juin 2026*
+
+**Réalisé :**
+- `dashboard/analytics/home.py` — `get_home_kpis` :
+  - `total_hours` : filtre `temps_écoute <= 0` avant la somme (valeurs négatives Deezer)
+  - `avg_minutes_per_day` : groupby sur `df_pos` (jours actifs uniquement, écoutes > 0)
+  - `nb_artists` : split multi-artistes par virgule + explode + nunique (ex : "Bon Entendeur, Mouloudji" = 2 artistes)
+  - Ajout `import re`
+- `dashboard/analytics/artist.py` :
+  - `get_artist_rank` : remplacement filtre exact (`== target`) par regex word-boundary pour capter les feats
+  - `get_total_listen_minutes` : même correctif regex
+  - `_get_albums_and_appears_on` → renommée `_get_albums`, `include_groups` restreint à `album,single` (suppression `appears_on`)
+  - `get_total_tracks_by_artist_id` : déduplication par ISRC (via `_get_full_tracks_batch` sur `/tracks?ids=...`) avec fallback nom normalisé ; peuple `_catalogue_isrcs_cache`
+  - `get_discography_coverage_by_id` : numérateur = intersection ISRCs écoutés ∩ ISRCs catalogue Spotify ; dénominateur = `len(catalogue_isrcs)` (ISRC-only)
+  - Ajout `_catalogue_isrcs_cache` et helper `_get_full_tracks_batch`
+
+---
+
 ## Session 6 — Landing page + Navigation ✅
 *Mai 2026*
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 from PIL import Image
 
@@ -29,18 +31,26 @@ def get_home_kpis(df_tracks: pd.DataFrame) -> dict:
     df["date_écoute"] = pd.to_datetime(df.get("date_écoute"), errors="coerce")
     df["artiste"] = df.get("artiste", "").astype(str).str.strip()
 
-    total_seconds = float(df["temps_écoute"].sum())
+    df_pos = df[df["temps_écoute"] > 0]
+
+    total_seconds = float(df_pos["temps_écoute"].sum())
     total_hours = int(round(total_seconds / 3600))
 
     nb_tracks = int(len(df))
 
-    if df["date_écoute"].notna().any():
-        per_day = df.groupby(df["date_écoute"].dt.date)["temps_écoute"].sum()
+    if df_pos["date_écoute"].notna().any():
+        per_day = df_pos.groupby(df_pos["date_écoute"].dt.date)["temps_écoute"].sum()
         avg_minutes_per_day = float(per_day.mean() / 60.0) if len(per_day) else 0.0
     else:
         avg_minutes_per_day = 0.0
 
-    nb_artists = int(df["artiste"].nunique())
+    all_artists = (
+        df["artiste"]
+        .apply(lambda x: re.split(r",\s*", x) if x else [])
+        .explode()
+        .str.strip()
+    )
+    nb_artists = int(all_artists[all_artists != ""].nunique())
 
     return {
         "total_hours": total_hours,
