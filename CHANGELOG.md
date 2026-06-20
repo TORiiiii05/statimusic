@@ -6,22 +6,90 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
-## Session 7 — Correction des indicateurs 🔄
+## Session 7 — Audit & correction des indicateurs ✅
 *Juin 2026*
 
-**Réalisé :**
-- `dashboard/analytics/home.py` — `get_home_kpis` :
-  - `total_hours` : filtre `temps_écoute <= 0` avant la somme (valeurs négatives Deezer)
-  - `avg_minutes_per_day` : groupby sur `df_pos` (jours actifs uniquement, écoutes > 0)
-  - `nb_artists` : split multi-artistes par virgule + explode + nunique (ex : "Bon Entendeur, Mouloudji" = 2 artistes)
-  - Ajout `import re`
-- `dashboard/analytics/artist.py` :
-  - `get_artist_rank` : classement entier reconstruit par split + explode sur la colonne artiste (cohérent avec `nb_artists` dans home.py) — filtre écoutes > 0, groupby sur `artiste_split`, lookup exact sur le nom cible
-  - `get_total_listen_minutes` : même correctif regex
-  - `_get_albums_and_appears_on` → renommée `_get_albums`, `include_groups` restreint à `album,single` (suppression `appears_on`)
-  - `get_total_tracks_by_artist_id` : déduplication par ISRC (via `_get_full_tracks_batch` sur `/tracks?ids=...`) avec fallback nom normalisé ; peuple `_catalogue_isrcs_cache`
-  - `get_discography_coverage_by_id` : numérateur = intersection ISRCs écoutés ∩ ISRCs catalogue Spotify ; dénominateur = `len(catalogue_isrcs)` (ISRC-only)
-  - Ajout `_catalogue_isrcs_cache` et helper `_get_full_tracks_batch`
+- `home.py` : exclure les `temps_écoute <= 0` du calcul de `total_hours`
+- `home.py` : `nb_artists` corrigé — split par virgule avant `nunique()` (multi-artistes)
+- `artist.py` : `get_artist_rank` corrigé — split + explode sur tous les artistes avant classement
+- `artist.py` : `get_total_listen_minutes` corrigé — regex word-boundary pour capter les feats
+- `artist.py` : `get_discography_coverage_by_id` corrigé — numérateur par ISRC, dénominateur album+single uniquement (sans appears_on), déduplication par ISRC
+- `artist.py` : `get_total_tracks_by_artist_id` corrigé — déduplication par ISRC (fallback nom normalisé)
+- Tests de non-régression déplacés en session 13
+
+---
+
+## Session 8 — Mot de passe oublié (à venir)
+
+- Ajout table `password_reset_tokens` dans Supabase
+- Route `/forgot-password` (GET/POST) — envoi email via Brevo
+- Route `/reset-password/<token>` (GET/POST) — vérification token, update hash
+- Templates HTML forgot-password et reset-password
+- Variable d'environnement `BREVO_API_KEY` sur Render
+
+---
+
+## Session 9 — Historique simulé (à venir)
+
+- Script `generate_demo_data.py` — génère un `.xlsx` au format Deezer avec vrais ISRCs
+- Bouton "Télécharger un exemple" sur `/upload` et landing
+- Fichier servi en asset statique `static/demo/historique_exemple.xlsx`
+
+---
+
+## Session 10 — Import historique Spotify (à venir)
+
+- Nouveau `dashboard/analytics/loaders_spotify.py` — lecture JSON Spotify
+- Filtre podcasts (`episode_name`) et audiobooks (`audiobook_title`)
+- Conversion `ms_played` → secondes, `ts` UTC → datetime pandas
+- Adaptation route `/upload` pour détecter `.xlsx` / `.json` / `.zip`
+- Adaptation indicateurs : covers via `spotify_track_uri`, discographie coverage en `—` pour comptes Spotify (v1)
+- Fichier démo Spotify ajouté à `static/demo/`
+
+---
+
+## Session 11 — Cache visualisations + nouvelles visus Home (à venir)
+
+- Nouveau `dashboard/analytics/charts_builder.py` — génération visus à l'upload
+- Stockage PNG/JSON Plotly dans Supabase Storage sous `{user_prefix}/charts/`
+- Port horloge d'écoute (`plot_listening_clock`) depuis `test_complet.py`
+- Port répartition mensuelle interactive (`plot_listening_time_by_month_interactive`)
+
+---
+
+## Session 12 — Nouvelles visus Artiste / Titre / Album (à venir)
+
+- Port timeline sorties d'albums (`build_album_release_timeline_segments`)
+- Port recommandations artistes similaires par co-écoute
+- Port recommandations titres et albums similaires par co-écoute
+
+---
+
+## Session 13 — Polish UX + tests de non-régression (à venir)
+
+- Amélioration rendu mobile des graphiques Plotly
+- États de chargement skeleton sur les visus
+- Refonte cards KPI (typographie, espacements)
+- Tests de non-régression : assertions sur les KPIs principaux
+
+---
+
+## Session 14 — Roue aléatoire (à venir)
+
+- Route `/wheel` + template dédié
+- Endpoint `/api/wheel-tracks` — top 1000 filtrable (genre, période, artiste)
+- Roue animée Canvas/SVG
+- Carte résultat avec liens Deezer / Spotify / YouTube
+
+---
+
+## Session 15 — Poster typographique (à venir)
+
+- Script `poster_generator.py` — génération PNG haute résolution avec Pillow
+- Design typographique + palette couleurs extraite des pochettes (sans reproduction des images)
+- Route `/poster` — preview watermarquée + bouton achat
+- Intégration paiement Lemon Squeezy
+- Route `/poster/download/<order_id>` — vérification paiement, téléchargement HD
 
 ---
 
