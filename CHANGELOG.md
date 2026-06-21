@@ -31,11 +31,13 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
-## Session 9 — Historique simulé (à venir)
+## Session 9 — Historique simulé ✅
+*Juin 2026*
 
-- Script `generate_demo_data.py` — génère un `.xlsx` au format Deezer avec vrais ISRCs
-- Bouton "Télécharger un exemple" sur `/upload` et landing
-- Fichier servi en asset statique `static/demo/historique_exemple.xlsx`
+- Script `generate_demo_data.py` créé à la racine — génère 10 444 lignes avec 51 artistes internationaux et 264 titres uniques
+- Fichier `static/demo/historique_exemple.xlsx` généré et disponible en téléchargement
+- Bouton "Télécharger un historique exemple" ajouté sur `upload.html` et `landing.html`
+- `static/demo/*.xlsx` ajouté au `.gitignore`
 
 ---
 

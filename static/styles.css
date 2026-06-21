@@ -548,6 +548,26 @@ a.detail-sub { transition: color 0.2s; }
 .upload-warning { font-size: 0.78rem; color: #555; text-align: center; }
 .upload-error { font-size: 0.85rem; color: #cf6f6f; text-align: center; }
 
+.demo-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 18px;
+    background: rgba(242, 204, 13, 0.08);
+    border: 1px solid rgba(242, 204, 13, 0.3);
+    border-radius: 8px;
+    color: #F2CC0D;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+.demo-banner:hover {
+    background: rgba(242, 204, 13, 0.15);
+    border-color: rgba(242, 204, 13, 0.6);
+}
+
 .hidden { display: none !important; }
 
 /* ============================================================
