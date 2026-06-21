@@ -2,19 +2,22 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 import os
 import json
-import tempfile
+from io import BytesIO
 
 import pandas as pd
 
 from db import supabase, supabase_admin
 from dashboard.analytics.loaders import load_listening_history
-from dashboard.analytics.spotify import get_spotify_token, search_track_by_isrc, image_getter
+from dashboard.analytics.loaders_spotify import load_spotify_history
+from dashboard.analytics.spotify import (
+    get_spotify_token, search_track_by_isrc, image_getter,
+    get_album_by_id, get_artist_by_id, resolve_spotify_isrcs,
+)
 from dashboard.analytics.track import get_track_kpis, track_monthly_listening_chart_html
 from dashboard.analytics.album import get_album_kpis_by_id, get_album_top_titles_by_listen_time_by_id, album_monthly_listening_chart_html_by_id
 from dashboard.analytics.artist import get_artist_kpis_by_id, get_top_10_titles_by_listen_time, get_top_10_albums_by_listen_time
-from dashboard.analytics.spotify import get_album_by_id, get_artist_by_id
 from dashboard.processor import (
-    process_excel_and_build_stats,
+    process_df_and_build_stats,
     upload_df_to_storage,
     download_df_from_storage,
     build_search_index,
@@ -61,19 +64,46 @@ def home():
 @login_required
 def upload():
     if request.method == "POST":
-        f = request.files.get("excel_file")
-        if not f or not f.filename.endswith(".xlsx"):
-            return render_template("dashboard/upload.html", error="Merci d'uploader un fichier .xlsx")
+        files = request.files.getlist("file")
+        if not files or all(f.filename == "" for f in files):
+            return render_template("dashboard/upload.html", error="Aucun fichier sélectionné.")
 
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
-        tmp.close()
-        f.save(tmp.name)
+        dfs = []
+        spotify_files = []
+
+        for f in files:
+            fname = f.filename.lower()
+            content = f.read()
+            if fname.endswith(".xlsx"):
+                loaded = load_listening_history(excel_path=BytesIO(content))
+                if loaded.df_tracks is not None and not loaded.df_tracks.empty:
+                    dfs.append(loaded.df_tracks)
+            elif fname.endswith(".json") or fname.endswith(".zip"):
+                spotify_files.append((f.filename, content))
+
+        if spotify_files:
+            df_sp = load_spotify_history(spotify_files)
+            if df_sp is not None and not df_sp.empty:
+                dfs.append(df_sp)
+
+        if not dfs:
+            return render_template("dashboard/upload.html",
+                error="Aucun historique valide trouvé dans les fichiers sélectionnés.")
+
+        df = pd.concat(dfs, ignore_index=True)
+
+        if "source" in df.columns and (df["source"] == "spotify").any():
+            tok = get_spotify_token()
+            if tok:
+                df = resolve_spotify_isrcs(df, tok)
+
+        if "date_écoute" in df.columns:
+            df = df.sort_values("date_écoute", ascending=False).reset_index(drop=True)
 
         try:
-            loaded = load_listening_history(excel_path=tmp.name)
-            stats = process_excel_and_build_stats(tmp.name, market=MARKET)
+            stats = process_df_and_build_stats(df, market=MARKET)
             stats_json = json.dumps(stats, ensure_ascii=False)
-            df_path = upload_df_to_storage(loaded.df_tracks, current_user.id, supabase_admin)
+            df_path = upload_df_to_storage(df, current_user.id, supabase_admin)
 
             supabase.table("users").update({
                 "stats_json": stats_json,
@@ -81,7 +111,7 @@ def upload():
             }).eq("id", current_user.id).execute()
 
             try:
-                index = build_search_index(loaded.df_tracks)
+                index = build_search_index(df)
                 supabase.table("users").update({
                     "search_index_json": json.dumps(index, ensure_ascii=False)
                 }).eq("id", current_user.id).execute()
@@ -93,8 +123,6 @@ def upload():
 
         except Exception as e:
             return render_template("dashboard/upload.html", error=f"Erreur lors du traitement : {e}")
-        finally:
-            os.unlink(tmp.name)
 
     return render_template("dashboard/upload.html")
 

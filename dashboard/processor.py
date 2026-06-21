@@ -5,7 +5,6 @@ import os
 from io import BytesIO
 from PIL import Image
 import pandas as pd
-from dashboard.analytics.loaders import load_listening_history
 from dashboard.analytics.home import (
     get_home_kpis,
     get_top_artists_by_listen_time_circle,
@@ -63,12 +62,9 @@ def _serialize_albums(df: pd.DataFrame) -> list[dict]:
     return out
 
 
-def process_excel_and_build_stats(excel_path: str, market: str = "FR") -> dict:
-    loaded = load_listening_history(excel_path=excel_path)
-    df_tracks = loaded.df_tracks
-
+def process_df_and_build_stats(df_tracks: pd.DataFrame, market: str = "FR") -> dict:
     if df_tracks is None or df_tracks.empty:
-        raise ValueError("Fichier Excel vide ou colonnes non reconnues.")
+        raise ValueError("Aucune donnée d'écoute valide.")
 
     kpis = get_home_kpis(df_tracks)
     top_artists = get_top_artists_by_listen_time_circle(df_tracks, top_n=10, market=market)
@@ -84,7 +80,7 @@ def process_excel_and_build_stats(excel_path: str, market: str = "FR") -> dict:
 
 
 # Colonnes stockées — uniquement ce dont les pages détaillées ont besoin
-COLS_TO_STORE = ["artiste", "titre", "album", "ISRC", "temps_écoute", "date_écoute"]
+COLS_TO_STORE = ["artiste", "titre", "album", "ISRC", "temps_écoute", "date_écoute", "source", "spotify_uri"]
 
 
 def upload_df_to_storage(df_tracks: pd.DataFrame, user_id: str, supabase_client) -> str:
@@ -116,6 +112,11 @@ def download_df_from_storage(path: str, supabase_client) -> pd.DataFrame:
     df = pd.read_parquet(BytesIO(raw), engine="pyarrow")
     if "date_écoute" in df.columns:
         df["date_écoute"] = pd.to_datetime(df["date_écoute"], errors="coerce")
+    # Compatibilité ascendante : anciens Parquets sans ces colonnes
+    if "source" not in df.columns:
+        df["source"] = "deezer"
+    if "spotify_uri" not in df.columns:
+        df["spotify_uri"] = None
     return df
 
 

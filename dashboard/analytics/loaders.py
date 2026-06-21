@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -32,17 +33,21 @@ class LoadedData:
 
 
 def load_listening_history(
-    excel_path: Optional[str | Path] = None,
+    excel_path: Optional[Union[str, Path, BytesIO]] = None,
     sheet_name: str = DEFAULT_SHEET_NAME,
 ) -> LoadedData:
-    path = Path(excel_path) if excel_path else default_excel_path()
-    if not path.exists():
-        empty = pd.DataFrame()
-        return LoadedData(df_tracks=empty, df_artists=empty)
+    if isinstance(excel_path, (BytesIO, bytes)) or hasattr(excel_path, "read"):
+        source = excel_path
+    else:
+        path = Path(excel_path) if excel_path else default_excel_path()
+        if not path.exists():
+            empty = pd.DataFrame()
+            return LoadedData(df_tracks=empty, df_artists=empty)
+        source = path
 
     # Lecture avec seulement les colonnes nécessaires
     df = pd.read_excel(
-        path,
+        source,
         sheet_name=sheet_name,
         usecols=lambda c: c.strip() in USECOLS,
     )
@@ -67,5 +72,8 @@ def load_listening_history(
     for col in ["titre", "artiste", "album"]:
         if col in df.columns:
             df[col] = df[col].fillna("").astype(str).str.strip()
+
+    df["source"] = "deezer"
+    df["spotify_uri"] = None
 
     return LoadedData(df_tracks=df, df_artists=pd.DataFrame())

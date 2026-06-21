@@ -41,14 +41,20 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ---
 
-## Session 10 — Import historique Spotify (à venir)
+## Session 10 — Import Spotify + refonte page upload ✅
+*Juin 2026*
 
-- Nouveau `dashboard/analytics/loaders_spotify.py` — lecture JSON Spotify
-- Filtre podcasts (`episode_name`) et audiobooks (`audiobook_title`)
-- Conversion `ms_played` → secondes, `ts` UTC → datetime pandas
-- Adaptation route `/upload` pour détecter `.xlsx` / `.json` / `.zip`
-- Adaptation indicateurs : covers via `spotify_track_uri`, discographie coverage en `—` pour comptes Spotify (v1)
-- Fichier démo Spotify ajouté à `static/demo/`
+- Nouveau `dashboard/analytics/loaders_spotify.py` — lecture JSON Spotify, filtrage podcasts/audiobooks, conversion ms→secondes
+- Schéma interne commun : colonnes `source` ("deezer"/"spotify") et `spotify_uri` ajoutées au DataFrame
+- `resolve_spotify_isrcs()` dans `spotify.py` — résolution ISRC batch par 50 via API Spotify
+- Route `/upload` refaite : accepte plusieurs fichiers simultanément (.xlsx, .json, .zip), fusion des DataFrames Deezer+Spotify
+- Refonte complète `templates/dashboard/upload.html` : design option D, bandeau démo enrichi, section aide en bas
+- Logos Deezer (blanc) et Spotify intégrés dans les cartes d'aide
+- `static/deezer-logo-white.svg` généré (texte blanc, wave violet)
+- Tutoriels mis à jour : vrais noms des boutons, délais corrects (Deezer ~7j, Spotify 2-3 semaines), liens directs corrects
+- Captures d'écran annotées intégrées (Deezer sous étape 2, Spotify sous étape 3)
+- Barre de recherche masquée sur les pages sans données (upload, login, register, landing, forgot/reset password)
+- Correction lien Deezer : `https://www.deezer.com` (évite l'encodage %2F)
 
 ---
 
@@ -63,9 +69,8 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 
 ## Session 12 — Nouvelles visus Artiste / Titre / Album (à venir)
 
-- Port timeline sorties d'albums (`build_album_release_timeline_segments`)
-- Port recommandations artistes similaires par co-écoute
-- Port recommandations titres et albums similaires par co-écoute
+- Port timeline sorties d'albums
+- Port recommandations artistes/titres/albums similaires par co-écoute
 
 ---
 
@@ -92,8 +97,19 @@ Format : `✅ Fait` · `🚧 En cours` · `⏳ À faire`
 - Script `poster_generator.py` — génération PNG haute résolution avec Pillow
 - Design typographique + palette couleurs extraite des pochettes (sans reproduction des images)
 - Route `/poster` — preview watermarquée + bouton achat
-- Intégration paiement Lemon Squeezy
+- Intégration paiement Lemon Squeezy (configuré mais désactivé jusqu'à la session 16)
 - Route `/poster/download/<order_id>` — vérification paiement, téléchargement HD
+
+---
+
+## Session 16 — Tests E2E + audit + go live (à venir)
+
+- Suite de tests Playwright couvrant tous les parcours utilisateur
+- Tests de charge Locust (simulation utilisateurs simultanés sur Render)
+- Audit sécurité OWASP ZAP
+- Corrections des bugs détectés
+- Activation du paiement Lemon Squeezy après validation complète
+- Tests de non-régression KPIs (assertions sur le DataFrame)
 
 ---
 

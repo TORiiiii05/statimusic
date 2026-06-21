@@ -85,7 +85,7 @@ statimusic/
 | `df_path` | text | Chemin fichier Parquet dans Storage (`{user_id}/df_tracks.parquet`) |
 
 **Bucket `user-data`** :
-- `{user_id}/df_tracks.parquet` — historique complet (6 colonnes, compression brotli)
+- `{user_id}/df_tracks.parquet` — historique complet (8 colonnes : titre, artiste, album, ISRC, temps_écoute, date_écoute, source, spotify_uri — compression brotli)
 - `{user_id}/search_index.json` — index de recherche pré-calculé
 
 **Clients** :
@@ -164,13 +164,14 @@ statimusic/
 - **Toujours** mettre à jour `CHANGELOG.md` **AVANT** de committer
 - **Commits seulement** après validation explicite de Jules
 - Environnement : **Windows PowerShell, VS Code**
+- Le paiement Lemon Squeezy doit rester **désactivé** jusqu'à la validation complète de la session 16
 
 ---
 
 ## Roadmap — sessions de développement
 
 Le projet suit un plan structuré en sessions. Chaque session a un périmètre défini.
-**Session en cours : Session 9.**
+**Session en cours : Session 11.**
 
 | Session | Contenu | Durée estimée | Statut |
 |---------|---------|---------------|--------|
@@ -178,12 +179,13 @@ Le projet suit un plan structuré en sessions. Chaque session a un périmètre d
 | **7** | Correction des indicateurs faux/suspects (`home.py`, `artist.py`) | ~8h | ✅ Terminée |
 | 8 | Mot de passe oublié (Brevo + tokens Supabase) | ~3h | ✅ Terminée |
 | 9 | Fichier démo Deezer simulé + intégration page upload | ~3h | ✅ Terminée |
-| 10 | Import historique Spotify (loader JSON, upload, indicateurs) | ~8h | ⏳ |
+| **10** | Import Spotify + refonte page upload (multi-fichiers, schéma commun, résolution ISRC, tutoriels avec captures) | ~8h | ✅ Terminée |
 | 11 | Cache visualisations + port horloge d'écoute + répartition mensuelle home | ~5h | ⏳ |
-| 12 | Port frises chronologiques + recommandations artiste/titre/album | ~5h | ⏳ |
-| 13 | Polish UX : mobile, skeletons, design cards KPI + tests de non-régression (assertions sur les KPIs) | ~3h | ⏳ |
+| 12 | Nouvelles visus Artiste / Titre / Album + recommandations | ~5h | ⏳ |
+| 13 | Polish UX : mobile, skeletons, design cards KPI + tests de non-régression | ~3h | ⏳ |
 | 14 | Roue aléatoire (top 1000, filtres, liens Deezer/Spotify/YouTube) | ~8h | ⏳ |
-| 15 | Poster typographique (génération Pillow, paiement Lemon Squeezy) | ~12h | ⏳ |
+| 15 | Poster typographique (génération Pillow, paiement Lemon Squeezy — désactivé jusqu'aux tests) | ~12h | ⏳ |
+| 16 | Tests E2E Playwright + audit sécurité + corrections — paiement activé après validation | ~6h | ⏳ |
 
 **Détail session 7 — corrections indicateurs :**
 

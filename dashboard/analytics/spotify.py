@@ -623,7 +623,69 @@ def seconds_to_mmss(seconds: Optional[Union[int, float]]) -> Optional[str]:
 
 
 # ============================================================
-# 7) Debug / reset caches
+# 7) ISRC resolution batch (Spotify import)
+# ============================================================
+
+def resolve_spotify_isrcs(df: pd.DataFrame, sp_token: str) -> pd.DataFrame:
+    """
+    Pour les lignes source='spotify' sans ISRC, résout les ISRCs via /tracks?ids=...
+    Retourne un nouveau DataFrame avec la colonne ISRC remplie autant que possible.
+    """
+    if "source" not in df.columns or "spotify_uri" not in df.columns:
+        return df
+
+    mask = (df["source"] == "spotify") & df["ISRC"].isna() & df["spotify_uri"].notna()
+    if not mask.any():
+        return df
+
+    df = df.copy()
+
+    uris = df.loc[mask, "spotify_uri"].dropna().unique().tolist()
+    track_ids = [
+        uri.split(":")[-1]
+        for uri in uris
+        if uri.startswith("spotify:track:") and uri.split(":")[-1]
+    ]
+
+    if not track_ids:
+        return df
+
+    isrc_map: Dict[str, str] = {}
+    for i in range(0, len(track_ids), 50):
+        batch = track_ids[i:i + 50]
+        data = _spotify_get("/tracks", token=sp_token, params={"ids": ",".join(batch)})
+        tracks = (data or {}).get("tracks") or []
+        for t in tracks:
+            if not isinstance(t, dict):
+                continue
+            tid = t.get("id")
+            isrc = (t.get("external_ids") or {}).get("isrc")
+            if tid and isrc:
+                isrc_map[tid] = isrc
+
+    def _resolve(uri):
+        if not isinstance(uri, str) or not uri.startswith("spotify:track:"):
+            return None
+        return isrc_map.get(uri.split(":")[-1])
+
+    df.loc[mask, "ISRC"] = df.loc[mask, "spotify_uri"].apply(_resolve)
+    return df
+
+
+def get_cover_by_spotify_uri(spotify_uri: str, token: Optional[str] = None) -> Optional[str]:
+    """Retourne l'image_url d'un titre à partir de son URI spotify:track:XXX."""
+    if not spotify_uri or not spotify_uri.startswith("spotify:track:"):
+        return None
+    track_id = spotify_uri.split(":")[-1]
+    tok = token or get_spotify_token()
+    if not tok:
+        return None
+    t = get_track_by_id(track_id, token=tok)
+    return (t or {}).get("image_url")
+
+
+# ============================================================
+# 8) Debug / reset caches
 # ============================================================
 
 def clear_spotify_caches() -> None:

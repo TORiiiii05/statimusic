@@ -438,135 +438,188 @@ a.detail-sub { transition: color 0.2s; }
 /* ============================================================
    UPLOAD PAGE
    ============================================================ */
-.upload-page {
-    height: calc(100vh - 60px);
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 40px 24px;
+.page {
     display: flex;
     flex-direction: column;
-    gap: 32px;
-    overflow: hidden;
+    align-items: center;
+    padding: 48px 24px 80px;
 }
 
-.upload-header { text-align: center; }
-.upload-header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
-.upload-subtitle { color: #888; font-size: 0.9rem; }
+.upload-title { color: #f2f2f2; font-size: 22px; font-weight: 500; text-align: center; margin-bottom: 8px; }
+.upload-sub { color: #888; font-size: 14px; text-align: center; margin-bottom: 20px; max-width: 560px; }
 
-.upload-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    flex: 1;
-    min-height: 0;
-    align-items: start;
-}
-
-/* Steps */
-.upload-steps {
-    display: flex;
-    flex-direction: column;
-    background: #222;
-    border: 1px solid #2e2e2e;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.upload-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 20px 24px;
-    border-bottom: 1px solid #2a2a2a;
-}
-.upload-step:last-child { border-bottom: none; }
-
-.step-number {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #F2CC0D;
-    color: #191919;
-    font-size: 0.8rem;
-    font-weight: 700;
+.demo-banner {
+    width: 100%;
+    max-width: 560px;
+    border: 1.5px solid #F2CC0D;
+    border-radius: 10px;
+    padding: 14px 20px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 2px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.15s;
+    text-decoration: none;
+    gap: 12px;
 }
-
-.step-content h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: #F0F0F0; }
-.step-content p { font-size: 0.82rem; color: #888; line-height: 1.6; }
-.step-content strong { color: #ccc; }
-
-/* Upload form */
-.upload-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
+.demo-banner:hover { background: rgba(242, 204, 13, 0.07); }
+.demo-banner-left { display: flex; align-items: center; gap: 12px; }
+.demo-banner-text { color: #F2CC0D; font-size: 13px; font-weight: 500; line-height: 1.4; }
+.demo-banner-sub { color: #a89200; font-size: 11px; font-weight: 400; margin-top: 2px; }
+.demo-banner-arrow { color: #F2CC0D; opacity: 0.6; flex-shrink: 0; }
 
 /* Drop zone */
 .drop-zone {
-    flex: 1;
-    border: 2px dashed #3a3a3a;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    min-height: 0;
-}
-.drop-zone:hover, .drop-zone--hover {
-    border-color: #F2CC0D;
-    background: rgba(242, 204, 13, 0.03);
-}
-.drop-zone--ready { border-color: #F2CC0D; border-style: solid; }
-
-.drop-input { display: none; }
-
-.drop-content, .drop-selected {
+    width: 100%;
+    max-width: 560px;
+    border: 1.5px dashed #333;
+    border-radius: 16px;
+    padding: 44px 32px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 32px;
+    gap: 14px;
+    cursor: pointer;
+    background: #1e1e1e;
+    transition: border-color 0.2s, background 0.2s;
+    margin-top: 8px;
     text-align: center;
 }
+.drop-zone:hover { border-color: #F2CC0D; background: #222; }
+.drop-label { color: #f2f2f2; font-size: 15px; font-weight: 500; }
+.drop-formats { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.format-pill {
+    background: #2a2a2a;
+    border: 0.5px solid #3a3a3a;
+    border-radius: 5px;
+    padding: 3px 9px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #888;
+}
+.format-label { font-size: 11px; color: #555; margin-left: 2px; }
+.drop-hint { color: #555; font-size: 12px; }
+.drop-multi { font-size: 12px; color: #666; display: flex; align-items: center; gap: 6px; }
 
-.drop-title { font-size: 0.95rem; font-weight: 600; color: #ccc; }
-.drop-sub { font-size: 0.82rem; color: #666; }
-.drop-browse { color: #F2CC0D; font-weight: 500; }
-.drop-format { font-size: 0.72rem; color: #444; }
-.drop-filename { font-size: 0.88rem; font-weight: 600; color: #F0F0F0; }
+.upload-error { font-size: 0.85rem; color: #cf6f6f; margin-top: 12px; width: 100%; max-width: 560px; }
 
-.btn-upload { width: 100%; padding: 14px; font-size: 0.95rem; }
-.btn-upload:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #222;
+    border: 0.5px solid #2e2e2e;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+}
+.file-name { color: #aaa; font-size: 13px; }
+.file-remove { background: none; border: none; color: #555; cursor: pointer; font-size: 14px; padding: 0 4px; }
+.file-remove:hover { color: #f2f2f2; }
 
-.upload-warning { font-size: 0.78rem; color: #555; text-align: center; }
-.upload-error { font-size: 0.85rem; color: #cf6f6f; text-align: center; }
+.btn-analyser {
+    width: 100%;
+    max-width: 560px;
+    background: #F2CC0D;
+    color: #191919;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: inherit;
+}
+.btn-analyser:hover { background: #e0bc00; }
+.btn-analyser:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.demo-banner {
+.divider {
+    width: 100%;
+    max-width: 560px;
+    border: none;
+    border-top: 0.5px solid #252525;
+    margin: 44px 0 28px;
+}
+
+.help-title {
+    font-size: 11px;
+    color: #f2f2f2;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 560px;
+}
+
+.platforms {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 720px;
+}
+
+.platform-card {
+    background: #1e1e1e;
+    border: 0.5px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 18px;
+}
+.platform-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+
+.delay-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 14px;
-    padding: 10px 18px;
-    background: rgba(242, 204, 13, 0.08);
-    border: 1px solid rgba(242, 204, 13, 0.3);
-    border-radius: 8px;
-    color: #F2CC0D;
-    font-size: 0.85rem;
+    gap: 5px;
+    background: #2a2a2a;
+    border: 0.5px solid #333;
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 14px;
+}
+
+.step { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+.step-num {
+    min-width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    color: #555;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 500;
-    text-decoration: none;
-    transition: background 0.2s, border-color 0.2s;
+    margin-top: 1px;
+    flex-shrink: 0;
 }
-.demo-banner:hover {
-    background: rgba(242, 204, 13, 0.15);
-    border-color: rgba(242, 204, 13, 0.6);
+.step-text { font-size: 12px; color: #666; line-height: 1.6; }
+.step-text a { color: #F2CC0D; text-decoration: none; }
+.step-text a:hover { text-decoration: underline; }
+.step-text code { font-family: monospace; font-size: 10px; color: #aaa; background: #252525; padding: 1px 5px; border-radius: 3px; }
+.step-text strong { color: #999; font-weight: 500; }
+
+.tip {
+    background: #1a1a1a;
+    border: 0.5px solid #2a2a2a;
+    border-radius: 7px;
+    padding: 10px 12px;
+    margin-top: 12px;
+    font-size: 11px;
+    color: #555;
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
 }
+
+.tuto-screenshot { margin-top: 4px; }
+.tuto-caption { font-size: 11px; color: #444; text-align: center; margin-top: 6px; font-style: italic; }
 
 .hidden { display: none !important; }
 
